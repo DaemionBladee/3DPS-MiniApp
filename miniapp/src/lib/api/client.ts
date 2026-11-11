@@ -42,9 +42,9 @@ export function responseError(path: ApiPath, status: number, body: unknown): Api
     404: 'This item could not be found.',
     409: 'This item has changed. Refresh before trying again.',
     413: 'This file is too large.',
-    415: 'This model format or content is not supported.',
+    415: 'This file format or content is not supported.',
     429: 'A rate or storage limit was reached. Wait or remove unused draft models.',
-    422: 'Check the model file and printing settings, then try again.',
+    422: 'Check the request fields or file, then try again.',
   }
   return new ApiError(messages[status] ?? 'The service is unavailable. Please try again.', status,
     typeof problem['code'] === 'string' ? problem['code'] : 'http_error',
@@ -148,14 +148,18 @@ export async function apiUpload<T>(path: ApiPath, file: File, options: {
   })
 }
 
-export async function apiDownload(path: ApiPath, name: string): Promise<void> {
+export async function apiPrivateBlob(path: ApiPath): Promise<Blob> {
   const response = await fetch(apiUrl(path), { credentials: 'same-origin', mode: 'same-origin', redirect: 'error' })
   if (!response.ok) {
     let body: unknown
     try { body = await response.json() } catch { body = null }
     throw responseError(path, response.status, body)
   }
-  const url = URL.createObjectURL(await response.blob())
+  return response.blob()
+}
+
+export async function apiDownload(path: ApiPath, name: string): Promise<void> {
+  const url = URL.createObjectURL(await apiPrivateBlob(path))
   const anchor = document.createElement('a')
   anchor.href = url; anchor.download = name; anchor.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)

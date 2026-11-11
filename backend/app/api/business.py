@@ -189,7 +189,7 @@ async def readiness(principal: PrincipalDependency, factory: FactoryDependency) 
     async with factory() as db:
         if (
             await db.scalar(text("SELECT version_num FROM alembic_version"))
-            != "0003_printing_intake"
+            != "0004_design_intake"
         ):
             raise AuthError(503, "schema_not_ready", "The service schema is not ready.")
     return StatusResponse()

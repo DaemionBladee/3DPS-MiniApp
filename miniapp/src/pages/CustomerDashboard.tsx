@@ -1,3 +1,4 @@
+import { DesignQueue } from '../features/design/DesignQueue'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../features/auth/context'
 import { RequestWorkspace } from '../features/requests/RequestWorkspace'
@@ -28,7 +29,7 @@ export default function CustomerDashboard() {
           <h2 id="hero-title">From possibility<br />to something real.</h2>
           <p>{session ? "Save a simulation project draft and add your ideas for printing or custom design." : "Explore a simpler home for 3D printing and custom design. Your next project will begin here."}</p>
           <Button disabled={!session} aria-describedby="request-later" onClick={() => document.getElementById('projects-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{session ? 'View project drafts' : 'Start a project'}<ArrowRight size={17} aria-hidden="true" /></Button>
-          {session && <Link className="button button--primary" to="/app/requests/new">New printing request</Link>}
+          {session && <div className="print-actions"><Link className="button button--primary" to="/app/requests/new">New printing request</Link><Link className="button button--secondary" to="/app/requests/design">New design request</Link></div>}
           <span id="request-later" className="hero-note">{session ? "Save and submit a private simulation printing request." : "Project requests are coming in a later release."}</span>
         </div>
         <div className="hero-art" aria-hidden="true">
@@ -53,6 +54,7 @@ export default function CustomerDashboard() {
         </div>
       </section>
 
+      <DesignQueue />
       <div className="customer-bottom-grid">
         <Card className="projects-card" aria-labelledby="projects-title">
           <div className="section-heading"><h2 id="projects-title">Your projects</h2><PackageOpen size={19} className="muted-icon" aria-hidden="true" /></div>

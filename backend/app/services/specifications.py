@@ -45,7 +45,13 @@ async def canonical_spec(database: AsyncSession, row: ServiceRequest) -> dict[st
                 else None,
             }
         )
+    source = (
+        {"source_design_version_id": str(row.source_design_version_id)}
+        if row.source_design_version_id
+        else {}
+    )
     return {
+        **source,
         "schema_version": 2,
         "service_type": row.service_type,
         "stage_kind": row.stage_kind,
@@ -80,6 +86,19 @@ async def refresh_spec(
             .values(request_revision=row.revision)
         )
         row.canonical_spec_sha256 = canonical_hash(await canonical_spec(database, row))
+    elif row.stage_kind == "design":
+        from app.database.design_models import DesignProject
+
+        project = await database.scalar(
+            select(DesignProject).where(DesignProject.request_id == row.id)
+        )
+        if project is not None:
+            row.spec_schema_version = 3
+            row.canonical_spec_sha256 = canonical_hash(await design_spec(database, row, project))
+        else:
+            row.canonical_spec_sha256 = specification_hash(
+                row.service_type, row.stage_kind, row.customer_notes
+            )
     else:
         row.canonical_spec_sha256 = specification_hash(
             row.service_type, row.stage_kind, row.customer_notes
@@ -93,3 +112,34 @@ async def refresh_spec(
         )
         .values(state="superseded")
     )
+
+
+async def design_spec(database: AsyncSession, row: ServiceRequest, project: Any) -> dict[str, Any]:
+    await database.flush()
+    files = (
+        await database.scalars(
+            select(UploadedFile)
+            .where(
+                UploadedFile.request_id == row.id,
+                UploadedFile.purpose == "design_reference",
+                UploadedFile.storage_state == "ready",
+            )
+            .order_by(UploadedFile.id)
+        )
+    ).all()
+    return {
+        "schema_version": 3,
+        "service_type": row.service_type,
+        "stage_kind": "design",
+        "customer_notes": row.customer_notes,
+        "brief": project.brief,
+        "references": [
+            {
+                "id": str(file.id),
+                "sha256": file.sha256,
+                "format": file.format,
+                "bytes": file.size_bytes,
+            }
+            for file in files
+        ],
+    }

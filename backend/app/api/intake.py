@@ -26,6 +26,7 @@ from app.database.intake_models import ProcessingTask, UploadedFile
 from app.intake.catalog import options
 from app.intake.rate_limits import consume_rate
 from app.intake.storage import CHUNK_BYTES, PrivateStorage
+from app.services.design_files import file_access
 from app.services.intake import (
     authorized_request,
     create_item,
@@ -58,7 +59,7 @@ async def retrieve(
 ) -> IntakeDetail:
     async with factory() as db:
         row = await authorized_request(db, principal.user, request_id)
-        return await detail(db, row)
+        return await detail(db, row, principal.user)
 
 
 @router.patch("/requests/{request_id}/intake", response_model=IntakeDetail)
@@ -73,7 +74,7 @@ async def preferences(
     await update_draft(factory, settings, principal, key, request_id, body)
     async with factory() as db:
         row = await authorized_request(db, principal.user, request_id)
-        return await detail(db, row)
+        return await detail(db, row, principal.user)
 
 
 @router.post("/requests/{request_id}/items", response_model=IntakeDetail, status_code=201)
@@ -152,19 +153,22 @@ async def upload(
             415, "binary_upload_required", "Upload raw model bytes as application/octet-stream."
         )
     await consume_rate(factory, settings, principal, "upload")
-    return await receive_upload(
-        factory,
-        settings,
-        principal,
-        request_id,
-        item_id,
-        expected_version,
-        key,
-        file_name(encoded_name),
-        size,
-        checksum,
-        request.stream(),
-        storage,
+    return cast(
+        IntakeDetail,
+        await receive_upload(
+            factory,
+            settings,
+            principal,
+            request_id,
+            item_id,
+            expected_version,
+            key,
+            file_name(encoded_name),
+            size,
+            checksum,
+            request.stream(),
+            storage,
+        ),
     )
 
 
@@ -180,8 +184,10 @@ async def metadata(
         file = await db.get(UploadedFile, file_id)
         if file is None:
             raise AuthError(404, "file_not_found", "This model file could not be found.")
-        await authorized_request(db, principal.user, file.request_id)
-        return FileMetadata.model_validate(file)
+        allowed = await file_access(db, principal.user, file)
+        metadata = FileMetadata.model_validate(file)
+        metadata.download_allowed = allowed
+        return metadata
 
 
 @router.get("/files/{file_id}/download", response_class=StreamingResponse)
@@ -197,7 +203,7 @@ async def download(
         file = await db.get(UploadedFile, file_id)
         if file is None:
             raise AuthError(404, "file_not_found", "This model file could not be found.")
-        await authorized_request(db, principal.user, file.request_id)
+        await file_access(db, principal.user, file, download=True)
         if (
             file.validation_status != "validated"
             or file.storage_state != "ready"

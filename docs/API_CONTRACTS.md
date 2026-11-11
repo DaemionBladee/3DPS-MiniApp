@@ -1,5 +1,16 @@
 # HTTP API contract — proposal for FastAPI + React
 
+## Implemented M05 design contract
+
+Actual design endpoints, payloads, private-file purposes and simulation guards
+are specified in [DESIGN_INTAKE.md](DESIGN_INTAKE.md) and exported OpenAPI/types.
+Design projects are created with design-stage requests; legacy drafts initialize
+explicitly. Brief/scope/proof/review/conversion commands reuse existing session,
+CSRF, Origin, expected-version and idempotency conventions. Owner publishes proofs
+and derives one linked printing draft; customer reviews exact current versions.
+The delivery/quotation/payment endpoints below remain unimplemented plans.
+
+
 M02 authentication, M03 project/request APIs and M04 private printing intake
 are implemented. The actual OpenAPI export is `backend/openapi.json`; generated
 React types are `miniapp/src/lib/api/schema.d.ts`. The exact M04 wire contract,

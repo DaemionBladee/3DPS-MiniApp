@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -34,6 +35,7 @@ async def record_event(
     action: str,
     old_status: str | None,
     reason: str | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> None:
     snapshot = {
         "request_id": str(row.id),
@@ -46,6 +48,8 @@ async def record_event(
         "old_status": old_status,
         "spec_sha256": row.canonical_spec_sha256,
     }
+    if metadata:
+        snapshot.update(metadata)
     audit = AuditLog(
         actor_user_id=actor.id,
         action=action,
@@ -107,6 +111,9 @@ async def create_request(
         )
         db.add(row)
         await db.flush()
+        if stage == "design":
+            from app.services.design import project_for_request
+            await project_for_request(db, row)
         await refresh_spec(db, row, advance=False)
         await record_event(db, user, row, "request.created", None)
         return ProjectRequestResponse(

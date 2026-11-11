@@ -1,5 +1,6 @@
 /* global window, document */
 import assert from 'node:assert/strict'
+import { runDesignIntegration } from './design-integration.mjs'
 import { spawn, spawnSync } from 'node:child_process'
 import { createHmac, randomBytes, randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
@@ -400,6 +401,7 @@ try {
   const analysis = await (await owner.request.get(`${origin}/api/v1/requests/${printingId}/analysis`)).json()
   assert(analysis.state === 'pending' && analysis.processing_available === false, 'Pending analysis must never claim a running or completed worker.')
   console.log('PASS 10/10: Owner queue, special requirements, private download and pending-analysis inspection.')
+  await runDesignIntegration({ page, ownerPage, customer, owner, origin, frontend })
   await customer.close()
   await owner.close()
 
@@ -417,11 +419,11 @@ try {
   assert((await forgedPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 200, 'A fresh valid proof must recover from an earlier rejected login.')
   console.log('PASS 7/10: forged launch rejected; fresh valid launch recovers through the real backend.')
   await forged.close()
-  console.log('M02 + M03 + M04 real-stack integration: 10 flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.')
+  console.log('M02–M05 real-stack integration: 14 flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.')
   if (useContainerApi) console.log('Container API mode PASS: packaged application used; caller owns container cleanup.')
 } catch (error) {
   // Assertion/selector diagnostics contain no signed proofs or credential values.
-  console.error(`M02 + M03 + M04 real-stack integration FAILED: ${error instanceof Error ? error.message : 'unknown test failure'}`)
+  console.error(`M02–M05 real-stack integration FAILED: ${error instanceof Error ? error.message : 'unknown test failure'}`)
   process.exitCode = 1
 } finally {
   if (browser) await browser.close().catch(() => {})

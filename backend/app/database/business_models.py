@@ -67,16 +67,19 @@ class ServiceRequest(Base):
         Index("ix_service_requests_customer_created", "customer_id", "created_at", "id"),
         Index("ix_service_requests_created", "created_at", "id"),
         CheckConstraint(
-            "(service_type = 'printing' AND stage_kind = 'printing') OR (service_type IN ('custom_design','design_and_print') AND stage_kind = 'design')",
+            "(service_type = 'printing' AND stage_kind = 'printing' AND source_design_version_id IS NULL) OR (service_type IN ('custom_design','design_and_print') AND stage_kind = 'design' AND source_design_version_id IS NULL) OR (service_type = 'design_and_print' AND stage_kind = 'printing' AND source_design_version_id IS NOT NULL)",
             name="ck_request_initial_stage",
         ),
+        UniqueConstraint("id", "customer_id", name="uq_request_customer"),
+        ForeignKeyConstraint(["source_design_version_id", "service_project_id", "customer_id"], ["design_versions.id", "design_versions.service_project_id", "design_versions.customer_id"], name="fk_print_source_design", use_alter=True, ondelete="RESTRICT"),
+        UniqueConstraint("source_design_version_id", name="uq_print_source_design"),
         CheckConstraint("status IN ('draft','submitted','cancelled')", name="ck_request_status"),
         UniqueConstraint("id", "customer_id", "stage_kind", name="uq_request_owner_stage"),
         CheckConstraint("mode = 'simulation'", name="ck_request_mode"),
         CheckConstraint(
             "fulfillment_method IN ('pickup','delivery')", name="ck_request_fulfillment"
         ),
-        CheckConstraint("spec_schema_version IN (1,2)", name="ck_request_spec_schema"),
+        CheckConstraint("spec_schema_version IN (1,2,3)", name="ck_request_spec_schema"),
         CheckConstraint(
             "(submitted_spec IS NULL AND submitted_at IS NULL AND submitted_revision IS NULL AND status != 'submitted') OR (submitted_spec IS NOT NULL AND submitted_at IS NOT NULL AND submitted_revision IS NOT NULL AND submitted_revision = revision AND status IN ('submitted','cancelled'))",
             name="ck_request_submission_snapshot",
@@ -91,6 +94,7 @@ class ServiceRequest(Base):
     customer_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
     )
+    source_design_version_id: Mapped[UUID | None] = mapped_column(Uuid)
     service_type: Mapped[ServiceType] = mapped_column(String(32), nullable=False)
     stage_kind: Mapped[StageKind] = mapped_column(String(16), nullable=False)
     mode: Mapped[Literal["simulation"]] = mapped_column(

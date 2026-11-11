@@ -1,3 +1,4 @@
+import { DesignQueue } from '../features/design/DesignQueue'
 import { OwnerPrintingQueue } from '../features/printing/OwnerPrintingQueue'
 import { useAuth } from '../features/auth/context'
 import { RequestWorkspace } from '../features/requests/RequestWorkspace'
@@ -37,7 +38,7 @@ export default function OwnerDashboard() {
           ))}
         </div>
       </section>
-      <OwnerPrintingQueue />
+      <OwnerPrintingQueue /><DesignQueue owner />
       <Card className="owner-activity" aria-labelledby="activity-title">
         <div className="section-heading"><h2 id="activity-title">Workshop activity</h2><PackageOpen size={19} className="muted-icon" aria-hidden="true" /></div>
         {session ? <RequestWorkspace owner /> : <EmptyState icon={ClipboardCheck} title="A clear starting point" description="There are no connected operational records in this preview. Future updates will reflect verified project events." />}

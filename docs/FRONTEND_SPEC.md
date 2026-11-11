@@ -1,5 +1,18 @@
 # React + TypeScript Telegram Mini App — frontend specification
 
+## Implemented M05 design workflow
+
+Customer `/app/requests/design` creates a design-only or combined draft;
+`/app/design-projects/:id` autosaves briefs, uploads private references and submits
+without print items. Scope agreement and proof reviews name exact versions.
+Owner `/owner/designs/:id` proposes scope, explicitly activates simulation work,
+publishes immutable previews and converts an approved manufacturing version once.
+The derived draft reuses M04 specs/submission, with source downloads denied and
+independent progress. Proof viewer renders only authenticated images or escaped
+plain text. No localStorage data, digital release or live action is introduced.
+See [DESIGN_INTAKE.md](DESIGN_INTAKE.md).
+
+
 ## Implemented M04 printing workflow
 
 `/app/requests/new` creates a private printing draft; `/app/requests/:requestId`

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
 from app.database import (
     business_models,  # noqa: F401 -- register M03 metadata
+    design_models,  # noqa: F401 - register M05 metadata
     intake_models,  # noqa: F401 - register M04 metadata
 )
 from app.database.models import Base

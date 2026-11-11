@@ -1,5 +1,15 @@
 # System architecture and implementation boundaries
 
+## Implemented M05 design slice
+
+M05 extends the same modular monolith and M04 storage services. New design briefs,
+immutable scope/proof histories, exact-version reviews and combined-stage lineage
+are documented in [ADR 0005](adr/0005-design-intake-and-lineage.md) and
+[DESIGN_INTAKE.md](DESIGN_INTAKE.md). Preview/reference validation adds pinned
+Pillow; credentials/descriptors are cleared in the bounded parser subprocess.
+No worker execution, real quote/payment or digital release is introduced.
+
+
 M04 extends the modular monolith with private printing intake. See
 [ADR 0004](adr/0004-private-printing-intake.md), [PRINTING_INTAKE.md](PRINTING_INTAKE.md)
 and [the implementation report](M04_IMPLEMENTATION_REPORT.md). M02 authentication

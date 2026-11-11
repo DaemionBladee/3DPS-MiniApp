@@ -17,6 +17,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.api.auth import router
 from app.api.business import router as business_router
+from app.api.design import router as design_router
 from app.api.intake import router as intake_router
 from app.api.schemas import ErrorResponse
 from app.core.config import Settings
@@ -49,7 +50,7 @@ class AuthBodyLimitMiddleware:
         if scope["type"] != "http" or not (
             scope.get("path") == "/api/v1/auth/telegram"
             or (
-                scope.get("path", "").startswith("/api/v1/requests")
+                scope.get("path", "").startswith(("/api/v1/requests", "/api/v1/design-projects", "/api/v1/owner/design-projects"))
                 and scope.get("method") in {"POST", "PATCH", "DELETE"}
             )
         ):
@@ -57,7 +58,7 @@ class AuthBodyLimitMiddleware:
             return
         # Model uploads are bounded incrementally by their quota-reserved stream.
         if scope.get("method") == "POST" and re.fullmatch(
-            r"/api/v1/requests/[0-9a-fA-F-]{36}/files", scope.get("path", "")
+            r"/api/v1/requests/[0-9a-fA-F-]{36}/(?:design/)?files", scope.get("path", "")
         ):
             await self.app(scope, receive, send)
             return
@@ -117,7 +118,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="3DPS Mini App API",
-        version="0.4.0",
+        version="0.5.0",
         lifespan=lifespan,
         docs_url=None if settings.app_env == "production" else "/docs",
         redoc_url=None,
@@ -205,4 +206,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(router)
     app.include_router(business_router)
     app.include_router(intake_router)
+    app.include_router(design_router)
     return app

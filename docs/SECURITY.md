@@ -1,5 +1,19 @@
 # Security requirements and verification plan
 
+## M05 design file and approval boundary
+
+Design attachments reuse M04 reservations, quotas, quarantine, checksums, recovery
+and CSRF/Origin/current-session authorization. Raster images require bounded
+Pillow verification/full decoding; plain UTF-8 TXT is the only document type.
+SVG/PDF/Office/active-content uploads are unsupported. Published review previews
+are distinct from unreleased manufacturing files. Customer approval/scope rights
+never grant a manufacturing download or paid-work authority. Derived print files
+also remain private to Owner. Scope/version/review commands are exact-version,
+idempotent and audited; simulation fixtures never become financial evidence.
+See [ADR 0005](adr/0005-design-intake-and-lineage.md). OS sandbox, public intake
+hardening and actual Telegram device gates remain outstanding.
+
+
 Implemented security includes M02 verified Telegram sessions, M03 resource
 permissions and M04 private uploads. See [AUTHENTICATION.md](AUTHENTICATION.md),
 [PRINTING_INTAKE.md](PRINTING_INTAKE.md) and ADRs 0002–0004. Uploads are not

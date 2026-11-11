@@ -55,7 +55,7 @@ def require_draft(row: ServiceRequest) -> None:
         raise AuthError(409, "draft_required", "Submitted specifications cannot be edited.")
 
 
-async def detail(db: AsyncSession, row: ServiceRequest) -> IntakeDetail:
+async def detail(db: AsyncSession, row: ServiceRequest, user: User | None = None) -> IntakeDetail:
     rows = (
         await db.scalars(
             select(RequestItem)
@@ -72,13 +72,20 @@ async def detail(db: AsyncSession, row: ServiceRequest) -> IntakeDetail:
             .order_by(UploadedFile.created_at.desc(), UploadedFile.id.desc())
             .limit(1)
         )
+        metadata = FileMetadata.model_validate(model) if model else None
+        latest_metadata = FileMetadata.model_validate(latest) if latest else None
+        if row.source_design_version_id and (user is None or user.role != "owner"):
+            if metadata is not None:
+                metadata.download_allowed = False
+            if latest_metadata is not None:
+                latest_metadata.download_allowed = False
         items.append(
             ItemDetail(
                 id=item.id,
                 request_revision=item.request_revision,
                 specification=item_specification(item),
-                model_file=FileMetadata.model_validate(model) if model else None,
-                latest_upload=FileMetadata.model_validate(latest) if latest else None,
+                model_file=metadata,
+                latest_upload=latest_metadata,
             )
         )
     tasks = (
@@ -293,6 +300,10 @@ async def submit_request(
                 raise AuthError(
                     422, "file_not_cleared", "Each item needs a complete, validated model upload."
                 )
+            if row.source_design_version_id:
+                from app.services.design_files import verify_derived_source
+
+                await verify_derived_source(db, row, file.sha256)
             declared = file.format_details.get("declared_unit")
             declared_key = {
                 "micron": "um",

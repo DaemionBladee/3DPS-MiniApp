@@ -79,3 +79,15 @@ live service or closes G1. Existing commercial decisions remain open.
 | Validation isolation | Cleared-environment resource-bounded stdlib subprocess; no model execution or network-fetch code | Stronger UID/mount/network or VM isolation and adversarial security review before M06/public exposure |
 | Submitted corrections | Submitted snapshot/items are frozen; no reopening/overwrite endpoint | Explicit clarification/successor-revision workflow and stale downstream invalidation before later approvals |
 | Real Telegram uploads/downloads | Desktop Chromium HTTPS tests pass; real WebViews unverified | Android/iOS/Desktop test-bot evidence, gateway limits and download compatibility before G1/public launch |
+
+## M05 review notes — 2026-11-11 (Asia/Rangoon)
+
+M04 acceptance is explicit in the M05 start instruction. ADR 0005 records the
+implemented simulation-only scope/proof path and exact manufacturing lineage.
+M00-D07 remains open: approved manufacturing-only design is not silently marked
+delivered or completed, and M12 must define the audited handoff terminal meaning.
+Digital rights are explicit scope fields but confer no M05 source release.
+Supported references are PNG/JPEG/plain TXT; other document types need a reviewed
+validator/profile. Existing public-upload isolation, retention, encryption,
+backup/restore and real-device requirements remain open. The explicit test-only
+quote/paid fixture cannot satisfy future M08/M09 quote or payment guards.

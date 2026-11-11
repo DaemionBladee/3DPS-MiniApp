@@ -7,14 +7,16 @@ import logging
 import unicodedata
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 from urllib.parse import unquote_to_bytes
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.api.design_schemas import DesignDetail
 from app.api.intake_schemas import IntakeDetail
 from app.core.config import Settings
 from app.core.errors import AuthError
@@ -23,7 +25,8 @@ from app.database.models import User
 from app.intake.storage import PrivateStorage, check_stream
 from app.intake.validation import InvalidModel, validate_file
 from app.services.auth import Principal
-from app.services.intake import authorized_request, detail, require_draft
+from app.services.design_files import upload_request
+from app.services.intake import detail
 from app.services.requests import record_event
 from app.services.specifications import refresh_spec
 from app.services.transactions import execute_command, lock_principal, unit_of_work
@@ -32,7 +35,7 @@ logger = logging.getLogger("app.intake")
 QUOTA_LOCK = 340044004
 
 
-def file_name(encoded: str) -> str:
+def file_name(encoded: str, purpose: str = "model") -> str:
     try:
         name = unicodedata.normalize(
             "NFC", unquote_to_bytes(encoded).decode("utf-8", errors="strict")
@@ -48,7 +51,12 @@ def file_name(encoded: str) -> str:
         or name.startswith(".")
     ):
         raise AuthError(422, "invalid_file_name", "Use a plain model filename without paths.")
-    if name.rsplit(".", 1)[-1].lower() not in {"stl", "3mf", "obj"}:
+    extensions = (
+        {"stl", "3mf", "obj"}
+        if purpose in {"model", "design_manufacturing"}
+        else {"png", "jpg", "jpeg", "txt"}
+    )
+    if name.rsplit(".", 1)[-1].lower() not in extensions:
         raise AuthError(415, "unsupported_model", "Upload STL, 3MF or OBJ model files.")
     return name
 
@@ -167,29 +175,30 @@ async def reserve_upload(
     settings: Settings,
     principal: Principal,
     request_id: UUID,
-    item_id: UUID,
+    item_id: UUID | None,
     version: int,
     key: str,
     name: str,
     size: int,
     checksum: str,
+    purpose: str = "model",
 ) -> UploadedFile:
     if size > settings.upload_max_bytes:
         raise AuthError(413, "file_too_large", "This model exceeds the per-file size limit.")
+    # Keep M04 model fingerprints byte-compatible for retained upload retries.
+    fingerprint_data = {"item": str(item_id), "name": name, "size": size, "sha256": checksum}
+    if purpose != "model":
+        fingerprint_data["purpose"] = purpose
     fingerprint = hashlib.sha256(
-        json.dumps(
-            {"item": str(item_id), "name": name, "size": size, "sha256": checksum},
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode()
+        json.dumps(fingerprint_data, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
     async with unit_of_work(factory) as db:
         user, _ = await lock_principal(db, settings, principal)
-        request = await authorized_request(db, user, request_id, own_write=True)
+        request = await upload_request(db, user, request_id, None, purpose, checksum, replay=True)
         existing = await db.scalar(
             select(UploadedFile)
             .where(
-                UploadedFile.owner_id == user.id,
+                UploadedFile.owner_id == request.customer_id,
                 UploadedFile.request_id == request_id,
                 UploadedFile.upload_key == key,
             )
@@ -202,40 +211,52 @@ async def reserve_upload(
                 )
             if existing.validation_status == "validated" and existing.storage_state == "ready":
                 return existing
+            if existing.storage_state == "deleted" and existing.sha256 is not None:
+                raise AuthError(
+                    409,
+                    "upload_removed",
+                    "This committed upload was removed. Select it again with a new upload command.",
+                )
             if existing.storage_state != "deleted":
                 raise AuthError(
                     409,
                     "upload_in_progress",
                     "The previous upload is pending or recovering. Retry shortly.",
                 )
-        require_draft(request)
+        await upload_request(db, user, request_id, version, purpose, checksum)
         if request.version != version:
             raise AuthError(409, "stale_version", "Refresh the draft before uploading.")
-        item = await db.scalar(
-            select(RequestItem)
-            .where(
-                RequestItem.id == item_id, RequestItem.request_id == request_id, RequestItem.active
+        if purpose == "model":
+            item = await db.scalar(
+                select(RequestItem)
+                .where(
+                    RequestItem.id == item_id,
+                    RequestItem.request_id == request_id,
+                    RequestItem.active,
+                )
+                .with_for_update()
             )
-            .with_for_update()
-        )
-        if item is None:
-            raise AuthError(404, "item_not_found", "This print item could not be found.")
-        if item.model_file_id is not None:
-            raise AuthError(
-                409, "model_already_uploaded", "Remove the item before replacing its model."
+            if item is None:
+                raise AuthError(404, "item_not_found", "This print item could not be found.")
+            if item.model_file_id is not None:
+                raise AuthError(
+                    409, "model_already_uploaded", "Remove the item before replacing its model."
+                )
+            busy = await db.scalar(
+                select(UploadedFile.id).where(
+                    UploadedFile.request_item_id == item_id,
+                    UploadedFile.storage_state == "receiving",
+                )
             )
-        busy = await db.scalar(
-            select(UploadedFile.id).where(
-                UploadedFile.request_item_id == item_id, UploadedFile.storage_state == "receiving"
-            )
-        )
-        if busy is not None:
-            raise AuthError(
-                409, "upload_in_progress", "This item already has an upload in progress."
-            )
-        await quotas(db, settings, user.id, request_id, size)
+            if busy is not None:
+                raise AuthError(
+                    409, "upload_in_progress", "This item already has an upload in progress."
+                )
+        await quotas(db, settings, request.customer_id, request_id, size)
         row = existing or UploadedFile(
-            owner_id=user.id,
+            owner_id=request.customer_id,
+            uploader_id=user.id,
+            purpose=purpose,
             request_id=request_id,
             request_item_id=item_id,
             upload_key=key,
@@ -293,7 +314,7 @@ async def receive_upload(
     settings: Settings,
     principal: Principal,
     request_id: UUID,
-    item_id: UUID,
+    item_id: UUID | None,
     version: int,
     key: str,
     name: str,
@@ -301,10 +322,21 @@ async def receive_upload(
     checksum: str,
     chunks: AsyncIterator[bytes],
     storage: PrivateStorage,
-) -> IntakeDetail:
+    purpose: str = "model",
+) -> IntakeDetail | DesignDetail:
     await cleanup_uploads(factory, storage)
     reserved = await reserve_upload(
-        factory, settings, principal, request_id, item_id, version, key, name, size, checksum
+        factory,
+        settings,
+        principal,
+        request_id,
+        item_id,
+        version,
+        key,
+        name,
+        size,
+        checksum,
+        purpose,
     )
     replaying = reserved.storage_state == "ready"
     try:
@@ -325,31 +357,34 @@ async def receive_upload(
                 },
                 settings.validation_timeout_seconds,
                 settings.validation_cpu_seconds,
+                "model" if purpose in {"model", "design_manufacturing"} else "reference",
             )
-            if result["format"] != name.rsplit(".", 1)[-1].lower():
+            if result["format"] != {"jpg": "jpeg"}.get(
+                name.rsplit(".", 1)[-1].lower(), name.rsplit(".", 1)[-1].lower()
+            ):
                 raise AuthError(
                     415, "format_mismatch", "Model content does not match its filename extension."
                 )
 
         async def authorize_replay(db: AsyncSession, user: User) -> None:
-            await authorized_request(db, user, request_id, own_write=True)
+            await upload_request(db, user, request_id, None, purpose, checksum, replay=True)
             file = await db.get(UploadedFile, reserved.id)
-            item = await db.get(RequestItem, item_id)
+            item = await db.get(RequestItem, item_id) if item_id else None
             if (
                 file is None
                 or file.storage_state != "ready"
                 or file.validation_status != "validated"
-                or item is None
-                or not item.active
-                or item.model_file_id != file.id
+                or (
+                    purpose == "model"
+                    and (item is None or not item.active or item.model_file_id != file.id)
+                )
             ):
                 raise AuthError(404, "file_not_found", "This model file could not be found.")
 
-        async def operation(db: AsyncSession, user: User) -> IntakeDetail:
-            row = await authorized_request(
-                db, user, request_id, own_write=True, version=reserved.expected_version
+        async def operation(db: AsyncSession, user: User) -> BaseModel:
+            row = await upload_request(
+                db, user, request_id, reserved.expected_version, purpose, checksum
             )
-            require_draft(row)
             file = await db.scalar(
                 select(UploadedFile).where(UploadedFile.id == reserved.id).with_for_update()
             )
@@ -360,11 +395,11 @@ async def receive_upload(
             )
             if (
                 file is None
-                or item is None
+                or (purpose == "model" and item is None)
                 or file.storage_state != "receiving"
                 or file.lease_token != reserved.lease_token
                 or file.lease_expires_at <= datetime.now(UTC)
-                or item.model_file_id is not None
+                or (item is not None and item.model_file_id is not None)
             ):
                 raise AuthError(409, "upload_expired", "This upload is no longer current.")
             await storage.promote(file.storage_key)
@@ -376,22 +411,42 @@ async def receive_upload(
             file.validation_status = "validated"
             file.storage_state = "ready"
             file.lease_expires_at = datetime.now(UTC)
-            file.request_revision = row.revision + 1
-            item.model_file_id = file.id
-            await refresh_spec(db, row)
-            await record_event(db, user, row, "request.file_attached", "draft")
-            return await detail(db, row)
+            if purpose in {"model", "design_reference"}:
+                file.request_revision = row.revision + 1
+                if item is not None:
+                    item.model_file_id = file.id
+                await refresh_spec(db, row)
+            else:
+                row.version += 1
+            await record_event(
+                db,
+                user,
+                row,
+                "request.file_attached",
+                row.status,
+                metadata={"file_id": str(file.id), "purpose": purpose},
+            )
+            if purpose == "model":
+                return await detail(db, row, user)
+            from app.services.design import detail as design_detail
+            from app.services.design import project_for_request
 
-        return await execute_command(
-            factory,
-            settings,
-            principal,
-            f"upload.attach:{reserved.id}",
-            key,
-            {"file": str(reserved.id), "sha256": checksum, "size": size},
-            IntakeDetail,
-            operation,
-            authorize_replay,
+            return await design_detail(db, await project_for_request(db, row), row, user)
+
+        result_type: type[BaseModel] = IntakeDetail if purpose == "model" else DesignDetail
+        return cast(
+            IntakeDetail | DesignDetail,
+            await execute_command(
+                factory,
+                settings,
+                principal,
+                f"upload.attach:{reserved.id}",
+                key,
+                {"file": str(reserved.id), "sha256": checksum, "size": size},
+                result_type,
+                operation,
+                authorize_replay,
+            ),
         )
     except BaseException as error:
         code = error.code if isinstance(error, (AuthError, InvalidModel)) else "upload_failed"

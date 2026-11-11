@@ -1,5 +1,11 @@
 # Development, testing and deployment runbook
 
+M05 migration, Pillow validation, simulation fixture and external device testing
+are documented in [DESIGN_INTAKE.md](DESIGN_INTAKE.md). Backend CI now executes
+14 real-stack M02–M05 flows against host and packaged production-mode test APIs.
+Hosted CI status must be observed separately from local checks.
+
+
 M04 private storage, cleanup and Cloud checks are documented in
 [PRINTING_INTAKE.md](PRINTING_INTAKE.md).
 M03 business API/migrations and Cloud test instructions are maintained in

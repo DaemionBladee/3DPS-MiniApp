@@ -66,6 +66,7 @@ class RequestResponse(BaseModel):
     customer_id: UUID
     service_type: ServiceType
     stage_kind: StageKind
+    source_design_version_id: UUID | None = None
     mode: Literal["simulation"]
     status: RequestStatus
     version: int

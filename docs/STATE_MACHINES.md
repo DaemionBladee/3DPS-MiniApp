@@ -1,5 +1,19 @@
 # Authoritative state machines and transition guards — v1.4
 
+## M05 implemented simulation path
+
+Design brief draft -> brief_received -> scoping -> awaiting_payment (simulation
+scope agreement), then an explicit Owner quote-and-paid fixture -> designing ->
+customer_review -> approved. Changes_requested returns to designing; each terminal
+review names exactly one latest proof. New scopes invalidate current fixture and
+approval; new proofs clear approval. Historical content/reviews remain immutable.
+M05 does not implement quoted/live payment/delivered states. Manufacturing-only
+design remains approved pending the M12 handoff decision (M00-D07). Printing is
+created separately in draft and still needs its own validated submission; neither
+fixture nor proof approval authorizes printing. See ADR 0005 for the scoped
+prototype path; the normative future live path below remains unchanged.
+
+
 **Status:** normative business contract. Implement transitions in backend domain services, not as arbitrary ORM/UI status changes. This file documents allowed *business paths*, not automatically complete code. Add a transition-table test for each entity when its milestone is implemented. Every transition has actor, expected version, idempotency key (for side effects), timestamp, reason when needed, and audit record.
 
 ## General rules

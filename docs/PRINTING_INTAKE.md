@@ -1,4 +1,11 @@
-# M04 printing intake runbook
+# Printing intake runbook
+
+M04 behavior below remains the printing foundation. M05 adds
+[design intake](DESIGN_INTAKE.md) and extends migration head to
+`0004_design_intake`. For derived combined-stage drafts, Customer can configure
+and submit only the approved manufacturing bytes; source downloads remain denied.
+The Owner explicitly attaches the source model through this existing upload
+infrastructure. No design-stage paid state or delivery right transfers.
 
 M04 implements private printing drafts and submitted requests in simulation.
 It reuses M02 sessions and M03 business transactions. See

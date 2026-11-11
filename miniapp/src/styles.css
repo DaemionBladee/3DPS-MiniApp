@@ -305,3 +305,13 @@ h1 { font-size: clamp(24px, 2.5vw, 34px); letter-spacing: -1.2px; line-height: 1
 .printing-page progress { width: 100%; accent-color: var(--app-accent); }
 .submitted-printing-queue { margin-top: 20px; padding: 24px; }
 @media (max-width: 480px) { .print-bottom-bar .button { width: 100%; } .print-steps .button { flex-basis: 42%; font-size: 12px; padding-inline: 9px; } }
+
+.design-details { display: grid; gap: 14px; margin-block: 18px; }
+.design-details dt { color: var(--app-muted); font-size: 13px; }
+.design-details dd { margin: 4px 0 0; white-space: pre-wrap; }
+.design-copy { white-space: pre-wrap; }
+.design-feedback { display: block; width: 100%; min-height: 100px; margin-block: 12px; border: 1px solid var(--app-line); border-radius: 8px; padding: 12px; background: var(--app-bg); color: var(--app-text); font: inherit; }
+.design-proof-image { max-width: 100%; max-height: 500px; object-fit: contain; border-radius: 8px; }
+.design-proof-text { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--app-bg); padding: 16px; border-radius: 8px; font-size: 14px; }
+.design-proof-viewer { margin-block: 16px; }
+.design-page .print-checkbox { display: flex; align-items: center; gap: 12px; min-height: 44px; margin-block: 16px; }

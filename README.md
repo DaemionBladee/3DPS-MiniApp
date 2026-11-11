@@ -1,18 +1,17 @@
 # 3DPS-MiniApp
 
-Telegram-first 3D printing and custom design workspace. **M04 adds private,
-database-backed printing intake** to the accepted M02/M03 foundation. Customers
-can save/resume multi-model drafts and submit validated specifications. The Owner
-can inspect submissions and download authorized files. Analysis remains pending;
-no slicer, quotation, payment or printer operation is available. Stop after M04
-for review; no deployment or live feature approval is implied.
+Telegram-first 3D printing and custom design workspace. **M05 adds private
+design briefs, versioned scope/proof review and combined design-to-print lineage**
+to the accepted M02–M04 foundation. Both stages have separate specifications and
+state. Proof work requires an explicit simulation-paid fixture; no real quotation,
+payment, live work, digital delivery, slicing or printer operation is available.
+Stop after M05 for review; no merge/deployment or live feature approval is implied.
 
-Read [the printing intake runbook](docs/PRINTING_INTAKE.md) and
-[the M04 implementation report](docs/M04_IMPLEMENTATION_REPORT.md) for APIs,
-storage, migration and test evidence. The [business foundation](docs/BUSINESS_FOUNDATION.md)
-and [authentication runbook](docs/AUTHENTICATION.md) remain the setup references.
-The frontend-only UI preview below needs no credentials and cannot create real
-sessions or saved requests.
+Read [the design intake runbook](docs/DESIGN_INTAKE.md),
+[the M05 implementation report](docs/M05_IMPLEMENTATION_REPORT.md), and
+[the printing intake runbook](docs/PRINTING_INTAKE.md). The
+[authentication runbook](docs/AUTHENTICATION.md) covers HTTPS/test Telegram setup.
+The frontend-only preview below grants no identity or saved-record access.
 
 ## Run the frontend
 

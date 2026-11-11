@@ -45,7 +45,9 @@ class FileMetadata(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
     request_id: UUID
-    request_item_id: UUID
+    request_item_id: UUID | None
+    purpose: Literal["model", "design_reference", "design_proof", "design_manufacturing"] = "model"
+    download_allowed: bool = True
     request_revision: int
     original_name: str
     size_bytes: int

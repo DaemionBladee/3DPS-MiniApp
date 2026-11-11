@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     DateTime,
+    ForeignKey,
     ForeignKeyConstraint,
     Index,
     Integer,
@@ -87,6 +88,16 @@ class UploadedFile(Base):
             name="fk_file_item_owner",
             ondelete="RESTRICT",
         ),
+        ForeignKeyConstraint(
+            ["request_id", "owner_id"],
+            ["service_requests.id", "service_requests.customer_id"],
+            name="fk_file_request_customer",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "(purpose = 'model' AND request_item_id IS NOT NULL) OR (purpose IN ('design_reference','design_proof','design_manufacturing') AND request_item_id IS NULL)",
+            name="ck_file_purpose_item",
+        ),
         UniqueConstraint(
             "id", "request_item_id", "request_id", "owner_id", name="uq_file_item_lineage"
         ),
@@ -119,7 +130,11 @@ class UploadedFile(Base):
         Uuid, primary_key=True, server_default=text("gen_random_uuid()")
     )
     request_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
-    request_item_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    request_item_id: Mapped[UUID | None] = mapped_column(Uuid)
+    purpose: Mapped[str] = mapped_column(String(24), nullable=False, server_default="model")
+    uploader_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", name="fk_file_uploader", ondelete="RESTRICT")
+    )
     owner_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
     request_revision: Mapped[int] = mapped_column(Integer, nullable=False)
     expected_version: Mapped[int] = mapped_column(Integer, nullable=False)

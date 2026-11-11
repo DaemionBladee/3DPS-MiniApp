@@ -19,7 +19,7 @@ function ItemSummary({ item, catalog, download }: { item: ItemDetail; catalog: P
     {spec.description && <p>{spec.description}</p>}
     {spec.special_requirements && <div className="print-special"><Badge tone="accent">Special requirements</Badge><p>{spec.special_requirements}</p></div>}
     {['not-sure'].some(value => [spec.material_key, spec.color_key, spec.quality_key].includes(value as 'not-sure')) && <p>Owner review required for uncertain settings.</p>}
-    {item.model_file?.validation_status === 'validated' && item.model_file.storage_state === 'ready' && <DownloadButton download={download} />}
+    {item.model_file?.validation_status === 'validated' && item.model_file.storage_state === 'ready' && item.model_file.download_allowed !== false && <DownloadButton download={download} />}
   </div>
 }
 

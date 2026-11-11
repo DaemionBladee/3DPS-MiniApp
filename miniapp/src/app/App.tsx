@@ -1,3 +1,5 @@
+import { DesignPage } from '../features/design/DesignPage'
+import { NewDesignRequest } from '../features/design/NewDesignRequest'
 import { NewPrintRequest } from '../features/printing/NewPrintRequest'
 import { PrintRequestPage } from '../features/printing/PrintRequestPage'
 import { Component, useCallback, useEffect, type PropsWithChildren } from 'react'
@@ -39,6 +41,11 @@ function RoutePresentation() {
       <Route index element={<Navigate to="/app" replace />} />
       <Route path="app" element={<><CustomerDashboard /><ServiceConnection /></>} />
       <Route path="app/requests/new" element={<NewPrintRequest />} />
+      <Route path="app/requests/design" element={<NewDesignRequest />} />
+      <Route path="app/design-projects/:designId" element={<DesignPage />} />
+      <Route path="app/design-requests/:requestId" element={<DesignPage />} />
+      <Route path="owner/designs/:designId" element={<DesignPage owner />} />
+      <Route path="owner/design-requests/:requestId" element={<DesignPage owner />} />
       <Route path="app/requests/print" element={<NewPrintRequest />} />
       <Route path="app/requests/:requestId" element={<PrintRequestPage />} />
       <Route path="owner/requests/:requestId" element={<PrintRequestPage owner />} />

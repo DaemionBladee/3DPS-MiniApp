@@ -367,7 +367,7 @@ def inspect(handle: BinaryIO, size: int, limits: dict[str, int]) -> dict[str, An
 
 
 async def validate_file(
-    path: Path, limits: dict[str, int], timeout: int, cpu: int
+    path: Path, limits: dict[str, int], timeout: int, cpu: int, profile: str = "model"
 ) -> dict[str, Any]:
     # Isolated Python mode and an allowlisted environment prevent credential/
     # Python startup inheritance. Only trusted stdlib code reads model bytes.
@@ -379,6 +379,7 @@ async def validate_file(
         str(path),
         json.dumps(limits),
         str(cpu),
+        profile,
         stdin=asyncio.subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.DEVNULL,
@@ -400,6 +401,47 @@ async def validate_file(
     return result
 
 
+
+def inspect_reference(handle: BinaryIO) -> dict[str, Any]:
+    import warnings
+
+    from PIL import Image
+    prefix = handle.read(16)
+    handle.seek(0)
+    if prefix.startswith(b"\x89PNG\r\n\x1a\n") or prefix.startswith(b"\xff\xd8\xff"):
+        handle.seek(0, 2)
+        size = handle.tell()
+        ending = b"\x00\x00\x00\x00IEND\xaeB`\x82" if prefix.startswith(b"\x89PNG") else b"\xff\xd9"
+        if size < len(ending):
+            raise InvalidModel("invalid_reference_image")
+        handle.seek(-len(ending), 2)
+        if handle.read() != ending:
+            raise InvalidModel("invalid_reference_image")
+        handle.seek(0)
+        Image.MAX_IMAGE_PIXELS = 16_000_000
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            try:
+                with Image.open(handle, formats=["PNG", "JPEG"]) as image:
+                    kind = image.format
+                    dimensions = image.size
+                    if max(dimensions) > 8000 or dimensions[0]*dimensions[1] > 16_000_000 or getattr(image, "n_frames", 1) != 1:
+                        raise InvalidModel("image_complexity_limit")
+                    image.verify()
+                handle.seek(0)
+                with Image.open(handle, formats=["PNG", "JPEG"]) as image:
+                    image.load()
+            except (OSError, ValueError, Warning) as error:
+                raise InvalidModel("invalid_reference_image") from error
+        return {"format": str(kind).lower(), "mime": "image/"+str(kind).lower(), "details": {"width": dimensions[0], "height": dimensions[1]}}
+    data = handle.read(1024*1024+1)
+    if not data or len(data) > 1024*1024:
+        raise InvalidModel("reference_document_limit")
+    content = data.decode("utf-8", errors="strict")
+    if not content.strip() or any(ord(c)<32 and c not in "\n\r\t" for c in content) or content.lstrip().startswith(("<", "%PDF", "{\\rtf")):
+        raise InvalidModel("unsupported_reference_content", 415)
+    return {"format": "txt", "mime": "text/plain", "details": {}}
+
 def main() -> None:
     resource.setrlimit(resource.RLIMIT_AS, (256 * 1024**2, 256 * 1024**2))
     cpu = int(sys.argv[3])
@@ -409,7 +451,10 @@ def main() -> None:
     try:
         descriptor = os.open(sys.argv[1], os.O_RDONLY | os.O_NOFOLLOW)
         with os.fdopen(descriptor, "rb") as handle:
-            result = inspect(handle, os.fstat(handle.fileno()).st_size, json.loads(sys.argv[2]))
+            if len(sys.argv) > 4 and sys.argv[4] == "reference":
+                result = inspect_reference(handle)
+            else:
+                result = inspect(handle, os.fstat(handle.fileno()).st_size, json.loads(sys.argv[2]))
     except InvalidModel as error:
         result = {"error": error.code, "status": error.status}
     except (

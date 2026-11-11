@@ -1,5 +1,18 @@
 # Database design — logical PostgreSQL schema
 
+## Implemented M05 schema
+
+Head is `0004_design_intake`, extending 0003/0002/0001 unchanged. Only four tables
+are added: design_projects/scopes/versions/reviews. Design files reuse uploaded_files
+with explicit purpose, verified customer/uploader and nullable print item. A direct
+request/customer FK and purpose/item check protect associations. Derived requests
+have an immutable exact source-design-version FK, composite project/customer
+lineage and unique source/project-stage. SQL guards freeze proof/review/scope
+history and validate publication/source relationships. See
+[ADR 0005](adr/0005-design-intake-and-lineage.md). No design_deliveries, quotations,
+orders or payment tables are created. The broader schema below remains planned.
+
+
 **Status:** design contract, not an applied migration. Codex must audit actual existing tables before implementing; do not drop tables or user data. Use SQLAlchemy 2 async, Alembic migrations, PostgreSQL constraints and indexes.
 
 ## Implemented M04 schema

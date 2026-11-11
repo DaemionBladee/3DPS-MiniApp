@@ -280,7 +280,7 @@ async def test_intake_upgrade_preserves_seeded_m03_history_and_guards_recovery(
                 {"user": user, "token": "c" * 64, "proof": "d" * 64},
             )
         await engine.dispose()
-        run_migration(migration_database, "upgrade", "head")
+        run_migration(migration_database, "upgrade", "0003_printing_intake")
         async with engine.begin() as db:
             assert (
                 await db.scalar(text("SELECT version_num FROM alembic_version"))
@@ -327,7 +327,7 @@ async def test_intake_upgrade_preserves_seeded_m03_history_and_guards_recovery(
             assert await db.scalar(text("SELECT count(*) FROM audit_logs")) == 1
             assert await db.scalar(text("SELECT count(*) FROM idempotency_records")) == 1
         await engine.dispose()
-        run_migration(migration_database, "upgrade", "head")
+        run_migration(migration_database, "upgrade", "0003_printing_intake")
         async with engine.begin() as db:
             await db.execute(
                 text(
@@ -344,5 +344,118 @@ async def test_intake_upgrade_preserves_seeded_m03_history_and_guards_recovery(
                 await db.scalar(text("SELECT version_num FROM alembic_version"))
                 == "0003_printing_intake"
             )
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_design_upgrade_preserves_m04_models_and_recovery_refuses_design_data(
+    migration_database: str,
+) -> None:
+    run_migration(migration_database, "upgrade", "0003_printing_intake")
+    engine = create_async_engine(migration_database, hide_parameters=True)
+    try:
+        async with engine.begin() as db:
+            user = await db.scalar(
+                text(
+                    "INSERT INTO users(telegram_id,display_name) VALUES(50505,'M04 seed') RETURNING id"
+                )
+            )
+            project = await db.scalar(
+                text(
+                    "INSERT INTO service_projects(customer_id,kind) VALUES(:user,'printing') RETURNING id"
+                ),
+                {"user": user},
+            )
+            request = await db.scalar(
+                text(
+                    "INSERT INTO service_requests(service_project_id,customer_id,service_type,stage_kind,canonical_spec_sha256) VALUES(:project,:user,'printing','printing',:sha) RETURNING id"
+                ),
+                {"project": project, "user": user, "sha": "a" * 64},
+            )
+            item = await db.scalar(
+                text(
+                    "INSERT INTO request_items(request_id,customer_id,request_revision) VALUES(:request,:user,1) RETURNING id"
+                ),
+                {"request": request, "user": user},
+            )
+            file = await db.scalar(
+                text(
+                    "INSERT INTO uploaded_files(request_id,request_item_id,owner_id,request_revision,expected_version,upload_key,fingerprint,storage_key,lease_token,lease_expires_at,reserved_bytes,expected_sha256,original_name) VALUES(:request,:item,:user,1,1,'m04-preserved-key',:sha,:key,gen_random_uuid(),now()+interval '1 hour',100,:sha,'seed.stl') RETURNING id"
+                ),
+                {"request": request, "item": item, "user": user, "sha": "b" * 64, "key": "c" * 32},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO sessions(user_id,token_hash,init_data_hash,expires_at) VALUES(:user,:token,:proof,now()+interval '1 hour')"
+                ),
+                {"user": user, "token": "d" * 64, "proof": "e" * 64},
+            )
+        await engine.dispose()
+        run_migration(migration_database, "upgrade", "head")
+        async with engine.begin() as db:
+            assert (
+                await db.scalar(text("SELECT version_num FROM alembic_version"))
+                == "0004_design_intake"
+            )
+            assert (
+                await db.scalar(
+                    text("SELECT purpose FROM uploaded_files WHERE id=:id"), {"id": file}
+                )
+                == "model"
+            )
+            assert (
+                await db.scalar(
+                    text("SELECT request_item_id FROM uploaded_files WHERE id=:id"), {"id": file}
+                )
+                == item
+            )
+            assert (
+                await db.scalar(
+                    text("SELECT storage_key FROM uploaded_files WHERE id=:id"), {"id": file}
+                )
+                == "c" * 32
+            )
+            assert await db.scalar(text("SELECT token_hash FROM sessions")) == "d" * 64
+            assert await db.scalar(text("SELECT count(*) FROM design_projects")) == 0
+            assert (
+                await db.scalar(text("SELECT canonical_spec_sha256 FROM service_requests"))
+                == "a" * 64
+            )
+        await engine.dispose()
+        run_migration(migration_database, "downgrade", "0003_printing_intake")
+        async with engine.begin() as db:
+            assert await db.scalar(text("SELECT id FROM uploaded_files")) == file
+            assert await db.scalar(text("SELECT count(*) FROM request_items")) == 1
+        await engine.dispose()
+        run_migration(migration_database, "upgrade", "head")
+        async with engine.begin() as db:
+            service = await db.scalar(
+                text(
+                    "INSERT INTO service_projects(customer_id,kind) VALUES(:user,'custom_design') RETURNING id"
+                ),
+                {"user": user},
+            )
+            design_request = await db.scalar(
+                text(
+                    "INSERT INTO service_requests(service_project_id,customer_id,service_type,stage_kind,canonical_spec_sha256) VALUES(:project,:user,'custom_design','design',:sha) RETURNING id"
+                ),
+                {"project": service, "user": user, "sha": "f" * 64},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO design_projects(request_id,service_project_id,customer_id,brief) VALUES(:request,:project,:user,'{}'::jsonb)"
+                ),
+                {"request": design_request, "project": service, "user": user},
+            )
+        await engine.dispose()
+        with pytest.raises(subprocess.CalledProcessError):
+            run_migration(migration_database, "downgrade", "0003_printing_intake")
+        async with engine.begin() as db:
+            assert (
+                await db.scalar(text("SELECT version_num FROM alembic_version"))
+                == "0004_design_intake"
+            )
+            assert await db.scalar(text("SELECT count(*) FROM design_projects")) == 1
     finally:
         await engine.dispose()
