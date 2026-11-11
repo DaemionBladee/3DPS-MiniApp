@@ -1,5 +1,9 @@
 # M02 — Secure Telegram authentication
 
+This is the original M02 implementation record. See
+[M02_FINAL_ACCEPTANCE_REVIEW.md](M02_FINAL_ACCEPTANCE_REVIEW.md) for the subsequent
+recovery correction, expanded test counts and CI/device/retention limitations.
+
 Date: 2026-11-11 (Asia/Rangoon). **M02 implemented; stop for review before M03.**
 M01 was explicitly reviewed/accepted in the owner's M02 instruction. Automated
 acceptance is verified; real Telegram device/G1 evidence remains **PENDING**.

@@ -16,31 +16,51 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient()
   const [state, setState] = useState<AuthState>(initialState)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const initialRequest = useRef<Promise<AuthResponse | null> | null>(null)
+  const initialRequest = useRef<{ key: string; promise: Promise<AuthResponse | null> } | null>(null)
+  const refreshRequest = useRef<{ key: string; promise: Promise<AuthResponse | null> } | null>(null)
+  const pendingLogins = useRef(new Map<string, Promise<AuthResponse>>())
+  const retiredProofs = useRef(new Set<string>())
   const generation = useRef(0)
-  const loginAttempted = useRef(false)
-  const preventRelogin = useRef(false)
+  const authEpoch = useRef(0)
 
   const clearPrivateState = useCallback(() => {
     generation.current += 1
-    preventRelogin.current = true
+    authEpoch.current += 1
+    initialRequest.current = null
+    refreshRequest.current = null
     void queryClient.cancelQueries()
     queryClient.clear()
     setState(sessionEnded)
   }, [queryClient])
 
-  const restoreSession = useCallback(async (allowTelegramLogin: boolean): Promise<AuthResponse | null> => {
+  const restoreSession = useCallback(async (): Promise<AuthResponse | null> => {
+    const launchAtStart = getRawTelegramInitData()
     try {
-      return await apiRequest<AuthResponse>('/auth/me')
+      const session = await apiRequest<AuthResponse>('/auth/me')
+      // A successful cookie restoration must not later turn the same launch
+      // into a new login after this session is expired or explicitly ended.
+      if (launchAtStart) retiredProofs.current.add(launchAtStart)
+      return session
     } catch (error) {
       if (!isUnauthorized(error)) throw error
     }
-    if (!allowTelegramLogin || preventRelogin.current || loginAttempted.current || telegram.source !== 'telegram') return null
+    if (telegram.source !== 'telegram') return null
+    // Read the current SDK proof after the cookie check, not a captured initial
+    // launch. A reused WebView may receive a genuinely fresh Telegram launch.
     const raw = getRawTelegramInitData()
     if (!raw) return null
-    loginAttempted.current = true
-    // Exact raw bytes go to FastAPI. Only the backend validates proof/role.
-    return apiRequest<AuthResponse>('/auth/telegram', { method: 'POST', body: JSON.stringify({ init_data: raw }) })
+    const key = `${authEpoch.current}:${raw}`
+    const pending = pendingLogins.current.get(key)
+    if (pending) return pending
+    if (retiredProofs.current.has(raw)) return null
+    retiredProofs.current.add(raw)
+    // Exact raw bytes go to FastAPI once. Failed/ambiguous submissions remain
+    // retired too: retry cookies or a fresh launch, never replay the credential.
+    const login = apiRequest<AuthResponse>('/auth/telegram', { method: 'POST', body: JSON.stringify({ init_data: raw }) })
+    pendingLogins.current.set(key, login)
+    const forgetPending = () => { if (pendingLogins.current.get(key) === login) pendingLogins.current.delete(key) }
+    void login.then(forgetPending, forgetPending)
+    return login
   }, [telegram.source])
 
   useEffect(() => {
@@ -54,8 +74,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const currentGeneration = generation.current
     // Reuse one promise across React StrictMode's effect replay, so a single-use
     // Telegram proof is never submitted twice during one mounted provider.
-    initialRequest.current ??= restoreSession(true)
-    void initialRequest.current.then(session => {
+    const key = `${telegram.source}:${getRawTelegramInitData() ?? ''}:${currentGeneration}`
+    if (initialRequest.current?.key !== key) initialRequest.current = { key, promise: restoreSession() }
+    void initialRequest.current.promise.then(session => {
       if (!active || currentGeneration !== generation.current) return
       setState(session ? { status: 'authenticated', session, error: null } : { status: 'unauthenticated', session: null, error: null })
     }).catch((error: unknown) => {
@@ -78,9 +99,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
     void queryClient.cancelQueries()
     queryClient.clear()
     setState(initialState)
-    // Retry only a cookie session; a used/rejected launch proof requires a fresh
-    // Telegram launch, not an automatic loop that re-submits signed credentials.
-    void restoreSession(false).then(session => {
+    // Cookie restoration is always first. Only an unseen current launch may
+    // then authenticate; attempted or explicitly logged-out proofs stay retired.
+    const key = `${telegram.source}:${getRawTelegramInitData() ?? ''}:${authEpoch.current}`
+    if (refreshRequest.current?.key !== key) {
+      const request = { key, promise: restoreSession() }
+      refreshRequest.current = request
+      const forgetPending = () => { if (refreshRequest.current === request) refreshRequest.current = null }
+      void request.promise.then(forgetPending, forgetPending)
+    }
+    void refreshRequest.current.promise.then(session => {
       if (currentGeneration !== generation.current) return
       if (!session) clearPrivateState()
       else setState({ status: 'authenticated', session, error: null })
@@ -100,7 +128,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const logout = useCallback(async () => {
     if (!state.session || isLoggingOut) return
     generation.current += 1
-    preventRelogin.current = true
+    authEpoch.current += 1
+    initialRequest.current = null
+    refreshRequest.current = null
+    const currentProof = getRawTelegramInitData()
+    if (currentProof) retiredProofs.current.add(currentProof)
     setIsLoggingOut(true)
     try {
       await apiRequest('/auth/logout', { method: 'POST', csrfToken: state.session.csrf_token })

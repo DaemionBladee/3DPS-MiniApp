@@ -34,6 +34,7 @@ export function PresentationGate({ children }: PropsWithChildren) {
           ? 'Close and reopen the Mini App in Telegram to start a fresh, secure sign-in.'
           : '3DPS brings your printing and design projects together inside Telegram. Open this Mini App from the official bot to sign in securely.')}</p>
         {auth.status === 'error' && <Button variant="secondary" onClick={auth.refreshSession}>Check connection again</Button>}
+        {auth.status === 'unauthenticated' && source === 'telegram' && <Button variant="secondary" onClick={auth.refreshSession}>Check sign-in again</Button>}
         <div className="entry-note"><LockKeyhole aria-hidden="true" size={18} /><span>No orders or payments are available in this preview.</span></div>
         {import.meta.env.DEV && !import.meta.env.PROD && (
           <p className="entry-dev-hint">Developing locally? Explicitly set VITE_TELEGRAM_MOCK=true and restart Vite to preview the two workspaces.</p>

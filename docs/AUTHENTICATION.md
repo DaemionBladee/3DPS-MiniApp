@@ -43,6 +43,15 @@ the cookie first and submits a launch once, including under StrictMode. After
 logout or rejected proof, **close and reopen Telegram** for fresh launch data;
 there is no automatic authentication retry loop.
 
+The M02 final review corrected frontend recovery: a connection retry first
+checks the real cookie, then may submit a current proof that was never attempted.
+If a retained Telegram WebView has received genuinely fresh raw launch data,
+“Check sign-in again” can use that new proof after logout/expiry/rejection.
+Previously attempted or logged-out proofs are not submitted again. A committed
+login whose cookie was lost still requires a fresh launch if cookie restoration
+fails. See [the final acceptance review](M02_FINAL_ACCEPTANCE_REVIEW.md) for the
+new tests and actual results.
+
 ## Trusted Owner provisioning
 
 Set `OWNER_TELEGRAM_IDS` only through the server's trusted secret/configuration
@@ -255,3 +264,8 @@ Any later retention job must preserve replay protection for at least the full
 launch freshness window and retain required security evidence. Account/session
 revocation and secret rotation require a trusted server operation; no customer
 or owner public administrative mutation was added in this milestone.
+
+Do not prune solely on session expiry: the configured session lifetime may be
+shorter than the permitted proof-freshness window. Deleting that session's
+unique proof record too early would allow a logged-out/expired launch to replay.
+Retention policy and any separate proof tombstones need explicit review first.

@@ -1,9 +1,10 @@
 name: Mini App foundation
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
-    branches: [main, DaemionBladee-dev]
+    branches: [main, DaemionBladee-dev, 'codex/**']
 
 permissions:
   contents: read

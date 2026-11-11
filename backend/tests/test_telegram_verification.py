@@ -44,6 +44,39 @@ def test_signature_field_is_included_for_bot_token_hmac_mode() -> None:
     rejects(raw.replace("synthetic-optional-ed25519-field", "tampered"))
 
 
+def test_legitimate_minimal_launch_does_not_require_optional_query_id() -> None:
+    fields = example_fields()
+    del fields["query_id"]
+    raw = sign_fields(fields)
+    assert check_webapp_signature(BOT_TOKEN, raw)
+    assert verify_init_data(raw, BOT_TOKEN, now=NOW).telegram_id == CUSTOMER_ID
+
+
+@pytest.mark.parametrize(
+    "changed_field",
+    ["query_id", "receiver", "chat", "chat_type", "chat_instance", "start_param", "can_send_after", "signature"],
+)
+def test_optional_launch_fields_remain_signed_and_never_become_identity(changed_field: str) -> None:
+    fields = example_fields()
+    fields.update(
+        receiver=json.dumps({"id": 777, "first_name": "Other", "is_bot": False}),
+        chat=json.dumps({"id": -100777, "type": "supergroup", "title": "Synthetic chat"}),
+        chat_type="supergroup",
+        chat_instance="1234567890123456789",
+        start_param="owner-preview",
+        can_send_after="30",
+        signature="synthetic-ed25519-field",
+    )
+    raw = sign_fields(fields)
+    assert check_webapp_signature(BOT_TOKEN, raw)
+    verified = verify_init_data(raw, BOT_TOKEN, now=NOW)
+    assert verified.telegram_id == CUSTOMER_ID
+    assert verified.username == "test_customer"
+    tampered = dict(parse_qsl(raw))
+    tampered[changed_field] = "tampered-value"
+    rejects(urlencode(tampered))
+
+
 def test_hmac_with_wrong_bot_token_is_rejected() -> None:
     rejects(sign_fields(example_fields(), bot_token="different:synthetic-bot-token"))
 

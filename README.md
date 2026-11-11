@@ -105,6 +105,9 @@ See [AGENTS.md](AGENTS.md), [approved M00 baseline](docs/IMPLEMENTATION_BASELINE
 [frontend specification](docs/FRONTEND_SPEC.md), and
 [M01 implementation report](docs/M01_IMPLEMENTATION_REPORT.md). Current results
 are in the [M02 implementation report](docs/M02_IMPLEMENTATION_REPORT.md).
+The [M02 final acceptance review](docs/M02_FINAL_ACCEPTANCE_REVIEW.md) records
+the recovery correction, expanded tests, migration checks and unverified hosted
+CI/device status.
 
 Real Telegram Android/iOS/Desktop launch and cookie behavior remain pending G1;
 the required external checklist is in the authentication runbook. M02's single

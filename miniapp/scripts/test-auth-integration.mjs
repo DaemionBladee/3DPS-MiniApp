@@ -191,7 +191,18 @@ try {
   // The single self-signed test certificate is accepted only by these ephemeral
   // browser contexts. Package installation and other TLS verification stay on.
   const customer = await browser.newContext({ ignoreHTTPSErrors: true })
-  await installTelegramPresentation(customer, signedLaunch(222))
+  const customerProof = signedLaunch(222)
+  await installTelegramPresentation(customer, customerProof)
+  // The HTTPS gateway must preserve Origin enforcement, including for an
+  // otherwise valid unused proof. A rejected browser origin consumes no proof.
+  for (const invalidOrigin of ['https://untrusted.example', 'null']) {
+    const rejected = await customer.request.post(`${origin}/api/v1/auth/telegram`, {
+      headers: { Origin: invalidOrigin }, data: { init_data: customerProof },
+    })
+    assert(rejected.status() === 403, 'HTTPS proxy must not permit login from an untrusted Origin.')
+  }
+  const missingOrigin = await customer.request.post(`${origin}/api/v1/auth/telegram`, { data: { init_data: customerProof } })
+  assert(missingOrigin.status() === 403, 'HTTPS proxy must not permit login with missing Origin.')
   const page = await customer.newPage()
   page.setDefaultTimeout(10_000)
   let customerLogins = 0
@@ -218,6 +229,16 @@ try {
   await page.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
   const missingCsrf = await page.evaluate(async () => (await fetch('/api/v1/auth/logout', { method: 'POST' })).status)
   assert(missingCsrf === 403, 'A cookie-authenticated logout without CSRF must fail.')
+  const csrfResponse = await customer.request.get(`${origin}/api/v1/auth/csrf`)
+  const { csrf_token: currentCsrf } = await csrfResponse.json()
+  const wrongOrigin = await customer.request.post(`${origin}/api/v1/auth/logout`, {
+    headers: { Origin: 'https://untrusted.example', 'X-CSRF-Token': currentCsrf },
+  })
+  assert(wrongOrigin.status() === 403, 'Correct CSRF must not bypass Origin validation through HTTPS proxy.')
+  const wrongCsrf = await customer.request.post(`${origin}/api/v1/auth/logout`, {
+    headers: { Origin: origin, 'X-CSRF-Token': 'invalid-session-token' },
+  })
+  assert(wrongCsrf.status() === 403, 'Correct Origin must not bypass session CSRF validation through HTTPS proxy.')
   assert((await page.evaluate(async () => (await fetch('/api/v1/auth/me')).status)) === 200, 'Failed CSRF must leave the session active.')
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
   await page.getByRole('heading', { name: 'Sign-in required' }).waitFor()
@@ -225,7 +246,11 @@ try {
   const replay = await customer.request.get(`${origin}/api/v1/auth/me`, { headers: { Cookie: `${cookieName}=${sessionCookie.value}` } })
   assert(replay.status() === 401, 'Server-side revocation must reject the old cookie even when replayed.')
   assert(customerLogins === 1, 'Logout must not silently reuse the old Telegram launch proof.')
-  console.log('PASS 3/5: real CSRF enforcement, React logout, PostgreSQL session revocation and no automatic proof replay.')
+  await page.evaluate(raw => { window.Telegram.WebApp.initData = raw }, signedLaunch(222))
+  await page.getByRole('button', { name: 'Check sign-in again' }).click()
+  await page.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
+  assert(customerLogins === 2, 'A fresh Telegram launch must recover after logout, using exactly one new login.')
+  console.log('PASS 3/5: HTTPS proxy Origin/CSRF enforcement, logout/revocation, no proof replay and fresh-launch recovery.')
   await customer.close()
 
   const owner = await browser.newContext({ ignoreHTTPSErrors: true })
@@ -250,7 +275,11 @@ try {
   await forgedPage.getByRole('heading', { name: 'Sign-in required' }).waitFor()
   assert((await forged.cookies()).every(cookie => cookie.name !== cookieName), 'Forged proof must never create a session cookie.')
   assert((await forgedPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 401, 'Forged proof must not authenticate against the actual backend.')
-  console.log('PASS 5/5: forged signed launch data cannot authenticate or open the production Owner workspace.')
+  await forgedPage.evaluate(raw => { window.Telegram.WebApp.initData = raw }, signedLaunch(111))
+  await forgedPage.getByRole('button', { name: 'Check sign-in again' }).click()
+  await forgedPage.getByRole('heading', { name: 'Your workshop, at a glance.' }).waitFor()
+  assert((await forgedPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 200, 'A fresh valid proof must recover from an earlier rejected login.')
+  console.log('PASS 5/5: forged launch rejected; fresh valid launch recovers through the real backend.')
   await forged.close()
   console.log('M02 real-stack integration: 5 flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.')
 } catch (error) {
