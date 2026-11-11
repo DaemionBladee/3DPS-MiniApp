@@ -97,7 +97,7 @@ describe('M01 workspaces', () => {
   })
 
   it('renders a recoverable unknown route rather than inventing future screens', async () => {
-    renderApp('/app/requests/new')
+    renderApp('/app/orders/new')
     expect(await screen.findByRole('heading', { name: 'This idea hasn’t taken shape.' })).toBeInTheDocument()
   })
 })

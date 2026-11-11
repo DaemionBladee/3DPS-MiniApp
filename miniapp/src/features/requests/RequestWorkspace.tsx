@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useRef, useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '../../components/ui/Button'
@@ -19,12 +20,13 @@ function DraftRow({ row, canEdit, busy, run }: { row: Request; canEdit: boolean;
   const [notes, setNotes] = useState(row.customer_notes)
   const [reason, setReason] = useState('')
   return <li className="request-row">
-    <div className="section-heading"><h3>{serviceLabels[row.service_type]}</h3><Badge>{row.status === 'draft' ? 'Draft' : 'Cancelled'}</Badge></div>
+    <div className="section-heading"><h3>{serviceLabels[row.service_type]}</h3><Badge>{{ draft: 'Draft', submitted: 'Submitted — pending analysis', cancelled: 'Cancelled' }[row.status]}</Badge></div>
     <p className="request-meta">{row.stage_kind === 'design' ? 'Design stage' : 'Printing stage'} · Revision {row.revision} · Simulation</p>
     {canEdit && row.status === 'draft' ? <form onSubmit={event => { event.preventDefault(); run({ path: `/requests/${row.id}`, method: 'PATCH', body: { expected_version: row.version, customer_notes: notes } }) }}>
       <label htmlFor={`notes-${row.id}`}>Draft notes</label><textarea id={`notes-${row.id}`} maxLength={2000} value={notes} onChange={event => setNotes(event.target.value)} disabled={busy} />
       <Button type="submit" variant="secondary" disabled={busy || notes === row.customer_notes}>Save changes</Button>
     </form> : <p className="request-notes">{row.customer_notes || 'No notes yet.'}</p>}
+    {row.stage_kind === 'printing' && <Link className="button button--secondary" to={`${canEdit ? '/app' : '/owner'}/requests/${row.id}`}>{row.status === 'draft' ? 'Open printing wizard' : 'View submitted printing request'}</Link>}
     {row.status === 'draft' && <form className="request-cancel" onSubmit={event => { event.preventDefault(); run({ path: `/requests/${row.id}/transitions`, method: 'POST', body: { expected_version: row.version, target: 'cancelled', reason } }) }}>
       <label htmlFor={`reason-${row.id}`}>Cancellation reason</label><input id={`reason-${row.id}`} minLength={3} maxLength={500} required value={reason} onChange={event => setReason(event.target.value)} disabled={busy} />
       <Button type="submit" variant="ghost" disabled={busy || reason.trim().length < 3}>Cancel draft</Button>
@@ -68,7 +70,7 @@ export function RequestWorkspace({ owner = false }: { owner?: boolean }) {
     mutation.mutate({ path: '/requests', method: 'POST', body: { service_type: kind, customer_notes: notes } })
   }
   return <div className="request-workspace">
-    <p>Simulation drafts only. File intake and submission will become available in a later release.</p>
+    <p>Simulation requests only. Printing drafts can be completed in the private printing wizard.</p>
     {!opened ? <Button variant="secondary" onClick={() => setOpened(true)}>{owner ? 'Load customer drafts' : 'Open project drafts'}</Button> : <>
       {!owner && <form className="request-create" onSubmit={submit} aria-label="New simulation draft">
         <label htmlFor="request-kind">Service</label><select id="request-kind" value={kind} onChange={event => setKind(event.target.value as typeof kind)} disabled={busy}>

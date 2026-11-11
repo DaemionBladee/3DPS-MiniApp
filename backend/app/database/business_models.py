@@ -70,8 +70,17 @@ class ServiceRequest(Base):
             "(service_type = 'printing' AND stage_kind = 'printing') OR (service_type IN ('custom_design','design_and_print') AND stage_kind = 'design')",
             name="ck_request_initial_stage",
         ),
-        CheckConstraint("status IN ('draft','cancelled')", name="ck_request_status"),
+        CheckConstraint("status IN ('draft','submitted','cancelled')", name="ck_request_status"),
+        UniqueConstraint("id", "customer_id", "stage_kind", name="uq_request_owner_stage"),
         CheckConstraint("mode = 'simulation'", name="ck_request_mode"),
+        CheckConstraint(
+            "fulfillment_method IN ('pickup','delivery')", name="ck_request_fulfillment"
+        ),
+        CheckConstraint("spec_schema_version IN (1,2)", name="ck_request_spec_schema"),
+        CheckConstraint(
+            "(submitted_spec IS NULL AND submitted_at IS NULL AND submitted_revision IS NULL AND status != 'submitted') OR (submitted_spec IS NOT NULL AND submitted_at IS NOT NULL AND submitted_revision IS NOT NULL AND submitted_revision = revision AND status IN ('submitted','cancelled'))",
+            name="ck_request_submission_snapshot",
+        ),
         CheckConstraint("version > 0 AND revision > 0", name="ck_request_versions"),
         CheckConstraint("canonical_spec_sha256 ~ '^[0-9a-f]{64}$'", name="ck_request_hash"),
     )
@@ -93,6 +102,14 @@ class ServiceRequest(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     revision: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     canonical_spec_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    spec_schema_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    fulfillment_method: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default="pickup"
+    )
+    fulfillment_notes: Mapped[str] = mapped_column(String(1000), nullable=False, server_default="")
+    submitted_revision: Mapped[int | None] = mapped_column(Integer)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    submitted_spec: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     customer_notes: Mapped[str] = mapped_column(String(2000), nullable=False, server_default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

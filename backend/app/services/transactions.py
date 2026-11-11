@@ -25,6 +25,35 @@ async def unit_of_work(factory: async_sessionmaker[AsyncSession]) -> AsyncIterat
         await database.flush()
 
 
+def require_live_session(user: User | None, session: Session | None) -> None:
+    if (
+        session is None
+        or user is None
+        or session.user_id != user.id
+        or not user.active
+        or session.revoked_at is not None
+        or session.expires_at <= datetime.now(UTC)
+    ):
+        raise AuthError(
+            401, "session_invalid", "Your session has expired. Open the Mini App again."
+        )
+
+
+async def lock_principal(
+    database: AsyncSession, settings: Settings, principal: Principal
+) -> tuple[User, Session]:
+    user = await database.scalar(
+        select(User).where(User.id == principal.user.id).with_for_update(key_share=True)
+    )
+    session = await database.scalar(
+        select(Session).where(Session.id == principal.session.id).with_for_update()
+    )
+    require_live_session(user, session)
+    assert user is not None and session is not None
+    user.role = configured_role(user.telegram_id, settings)
+    return user, session
+
+
 async def execute_command[Result: BaseModel](
     factory: async_sessionmaker[AsyncSession],
     settings: Settings,
@@ -48,27 +77,7 @@ async def execute_command[Result: BaseModel](
         # check done before opening this command's transaction is not enough.
         # Match authentication's user -> session lock order to avoid deadlocks
         # when a fresh Telegram login rotates the existing cookie concurrently.
-        user = await database.scalar(
-            # Non-key changes (disable/role/login) still serialize, while
-            # other commands can validate incoming user foreign keys. An
-            # exclusive user lock can deadlock Owner vs Customer mutations.
-            select(User).where(User.id == principal.user.id).with_for_update(key_share=True)
-        )
-        session = await database.scalar(
-            select(Session).where(Session.id == principal.session.id).with_for_update()
-        )
-        if (
-            session is None
-            or user is None
-            or session.user_id != user.id
-            or not user.active
-            or session.revoked_at is not None
-            or session.expires_at <= datetime.now(UTC)
-        ):
-            raise AuthError(
-                401, "session_invalid", "Your session has expired. Open the Mini App again."
-            )
-        user.role = configured_role(user.telegram_id, settings)
+        user, session = await lock_principal(database, settings, principal)
         previous = await database.get(IdempotencyRecord, (user.id, action, key))
         if previous:
             # Cached responses are private data too. Resource commands must
@@ -83,6 +92,7 @@ async def execute_command[Result: BaseModel](
                 )
             return result_type.model_validate(previous.response_json)
         result = await operation(database, user)
+        require_live_session(user, session)
         database.add(
             IdempotencyRecord(
                 actor_user_id=user.id,

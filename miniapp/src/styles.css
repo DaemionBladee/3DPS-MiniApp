@@ -276,3 +276,32 @@ h1 { font-size: clamp(24px, 2.5vw, 34px); letter-spacing: -1.2px; line-height: 1
 .request-row h3 { margin: 0; }
 .request-notes { white-space: pre-wrap; }
 .request-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+.printing-page { display: grid; gap: 20px; max-width: 1100px; }
+.print-back { font-size: 14px; color: var(--app-accent); }
+.print-steps, .print-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.print-steps .button { flex: 1 1 140px; min-height: 44px; }
+.print-notice { border-left: 3px solid var(--app-accent); }
+.print-notice p + p { margin-top: 10px; }
+.printing-page .card { padding: 22px; overflow-wrap: anywhere; }
+.printing-page .card h2, .submitted-printing-queue h2 { margin: 0 0 12px; font-size: 18px; font-weight: 650; }
+.printing-page .card > p { line-height: 1.6; }
+.print-form { display: grid; gap: 10px; border: 0; padding: 0; margin-top: 18px; min-width: 0; }
+.print-form legend { margin-bottom: 14px; font-size: 16px; font-weight: 650; }
+.print-form label { font-size: 14px; font-weight: 550; }
+.print-form input, .print-form select, .print-form textarea { min-width: 0; width: 100%; min-height: 44px; border: 1px solid var(--app-line); border-radius: 8px; padding: 10px; color: var(--app-text); background: var(--app-bg); font: inherit; }
+.print-form textarea { min-height: 90px; resize: vertical; }
+.print-form .print-checkbox { display: flex; gap: 12px; align-items: center; min-height: 44px; }
+.print-form .print-checkbox input { width: 22px; height: 22px; min-height: 22px; flex-shrink: 0; }
+.print-file-picker { display: grid; gap: 12px; padding: 16px; border: 1px dashed var(--app-line); border-radius: 8px; margin-top: 16px; }
+.print-file-picker input { width: 100%; min-width: 0; min-height: 44px; }
+.print-summary dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 12px; margin-block: 16px; }
+.print-summary dt { color: var(--app-muted); font-size: 12px; }
+.print-summary dd { margin: 4px 0 0; font-size: 14px; }
+.print-summary p { white-space: pre-wrap; }
+.print-special { margin-block: 16px; border-left: 2px solid var(--app-accent); padding-left: 12px; }
+.print-bottom-bar { position: relative; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px; border: 1px solid var(--app-line); border-radius: 12px; background: var(--app-panel); z-index: 5; }
+.print-bottom-bar p { font-size: 13px; color: var(--app-muted); }
+.printing-page progress { width: 100%; accent-color: var(--app-accent); }
+.submitted-printing-queue { margin-top: 20px; padding: 24px; }
+@media (max-width: 480px) { .print-bottom-bar .button { width: 100%; } .print-steps .button { flex-basis: 42%; font-size: 12px; padding-inline: 9px; } }

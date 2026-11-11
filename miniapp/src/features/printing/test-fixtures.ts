@@ -1,0 +1,11 @@
+import type { IntakeDetail, ItemSpecification, PrintingOptions } from './types'
+export const REQUEST_ID = '00000000-0000-4000-8000-000000000010'
+export const ITEM_ID = '00000000-0000-4000-8000-000000000020'
+export const FILE_ID = '00000000-0000-4000-8000-000000000030'
+export const CUSTOMER_ID = '00000000-0000-4000-8000-000000000001'
+export const specification: ItemSpecification = { description: 'Test triangle', quantity: 1, material_key: 'dev-pla', color_key: 'dev-white', quality_key: 'dev-standard', unit_key: 'mm', unit_confirmed: true, special_requirements: '' }
+export const catalog: PrintingOptions = { catalog_version: 'development-v1', simulation_only: true, notice: 'Development options only. No commercial stock or printer capability.', materials: [{ key: 'dev-pla', label: 'PLA (development)', color_keys: ['dev-white'] }], colors: [{ key: 'dev-white', label: 'White (development)' }], qualities: [{ key: 'dev-standard', label: 'Standard (development)' }], units: [{ key: 'mm', label: 'Millimeters' }], max_file_bytes: 25 * 1024 * 1024, max_request_files: 10 }
+export function intakeData(withModel = true): IntakeDetail {
+  const model = { id: FILE_ID, request_id: REQUEST_ID, request_item_id: ITEM_ID, request_revision: 3, original_name: 'triangle.stl', size_bytes: 134, sha256: 'a'.repeat(64), format: 'stl', format_details: {}, validation_status: 'validated' as const, storage_state: 'ready' as const, failure_code: null }
+  return { request: { id: REQUEST_ID, customer_id: CUSTOMER_ID, service_project_id: '00000000-0000-4000-8000-000000000040', service_type: 'printing', stage_kind: 'printing', mode: 'simulation', status: 'draft', version: 3, revision: 3, canonical_spec_sha256: 'a'.repeat(64), customer_notes: '', created_at: '2026-11-11T00:00:00Z', updated_at: '2026-11-11T00:00:00Z', spec_schema_version: 2, fulfillment_method: 'pickup', fulfillment_notes: '', submitted_at: null, submitted_revision: null, submitted_spec: null }, items: [{ id: ITEM_ID, request_revision: 3, specification: { ...specification }, model_file: withModel ? model : null, latest_upload: withModel ? model : null }], customer_display_name: 'Test Customer', tasks: [] }
+}

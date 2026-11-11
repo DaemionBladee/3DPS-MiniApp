@@ -1,5 +1,7 @@
 # Development, testing and deployment runbook
 
+M04 private storage, cleanup and Cloud checks are documented in
+[PRINTING_INTAKE.md](PRINTING_INTAKE.md).
 M03 business API/migrations and Cloud test instructions are maintained in
 [BUSINESS_FOUNDATION.md](BUSINESS_FOUNDATION.md).
 M02 runnable authentication setup, Docker/Cloud tests, schema generation and
@@ -38,7 +40,7 @@ deployment targets below are not claims that later milestones have been implemen
 | `LIVE_PAYMENTS_ENABLED` | Allow real payment flow | false |
 | `REAL_PRINTING_ENABLED` | Allow real production | false |
 | `SIMULATION_MODE` | Virtual profiles and simulated operations | true |
-| `UPLOAD_MAX_MB` | Upload cap and quotas | conservative |
+| `UPLOAD_MAX_BYTES` | Upload cap and quotas | conservative |
 | `STORAGE_ROOT` | Private storage root | private volume |
 
 Backends must validate incompatible flag combinations and fail startup if live actions are enabled while simulation mode is on or required hardware/payment checks are missing. **`LIVE_PAYMENTS_ENABLED` requires `PAYMENT_POLICY_APPROVED`, permitted category-specific methods and owner signoff. `BINDING_QUOTES_ENABLED` additionally requires approved policy and **category/stage-specific live-fulfillment readiness** (digital design requires approved design capacity and compliant checkout, not printer stock; printed items additionally require calibrated printer and stock readiness); `AUTO_QUOTE_ENABLED` requires `BINDING_QUOTES_ENABLED` plus calibrated/approved printer, material, stock and pricing profiles. `REAL_PRINTING_ENABLED` requires verified payment and an actual compatible physical printer.** Maintain separate environment files/secret stores per stage.

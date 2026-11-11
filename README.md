@@ -1,15 +1,18 @@
 # 3DPS-MiniApp
 
-Telegram-first 3D printing and custom design workspace. **M03 adds simulation
-project/stage drafts, transactional audit/outbox/idempotency, and generated
-React/FastAPI business contracts to M02 authentication.** Customer and Owner
-can use the initial authenticated draft APIs. Uploads, submission, quotations,
-orders, payments and printers remain unavailable. Stop after M03 for review.
+Telegram-first 3D printing and custom design workspace. **M04 adds private,
+database-backed printing intake** to the accepted M02/M03 foundation. Customers
+can save/resume multi-model drafts and submit validated specifications. The Owner
+can inspect submissions and download authorized files. Analysis remains pending;
+no slicer, quotation, payment or printer operation is available. Stop after M04
+for review; no deployment or live feature approval is implied.
 
-Read [the business foundation runbook](docs/BUSINESS_FOUNDATION.md) for M03 API,
-migration, Cloud testing and external verification instructions, and
-[the authentication runbook](docs/AUTHENTICATION.md) for HTTPS/Telegram setup.
-The frontend-only UI preview below still needs no bot credentials or backend.
+Read [the printing intake runbook](docs/PRINTING_INTAKE.md) and
+[the M04 implementation report](docs/M04_IMPLEMENTATION_REPORT.md) for APIs,
+storage, migration and test evidence. The [business foundation](docs/BUSINESS_FOUNDATION.md)
+and [authentication runbook](docs/AUTHENTICATION.md) remain the setup references.
+The frontend-only UI preview below needs no credentials and cannot create real
+sessions or saved requests.
 
 ## Run the frontend
 

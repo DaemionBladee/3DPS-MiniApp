@@ -1,5 +1,18 @@
 # React + TypeScript Telegram Mini App — frontend specification
 
+## Implemented M04 printing workflow
+
+`/app/requests/new` creates a private printing draft; `/app/requests/:requestId`
+resumes its Models, Specifications, Fulfillment and Review steps. Per-item settings
+and preferences autosave through versioned backend APIs. Uploads report actual
+transfer progress, structural-validation errors and retry/cancel controls. A
+reload retrieves committed drafts from PostgreSQL; file bytes and draft data are
+never written to localStorage. Interrupted in-memory transfers require reselection.
+`/owner/requests/:requestId` is read-only inspection with private downloads and
+pending-analysis status. Owner authorization is enforced by FastAPI. Development
+catalog choices are visibly labeled; no pricing/checkout actions exist. See
+[PRINTING_INTAKE.md](PRINTING_INTAKE.md) for test/run instructions.
+
 ## Structure
 One React SPA, two workspaces (`customer`, `owner`). Do not implement an operator role or separate operator dashboard for MVP. Owner handles production and admin functions. Use route guards for navigation, but authorize every API call on FastAPI.
 

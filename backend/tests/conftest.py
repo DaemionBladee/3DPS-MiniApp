@@ -89,8 +89,8 @@ def make_settings(database_dsn: str, **changes: object) -> Settings:
 
 
 @pytest_asyncio.fixture
-async def app(clean_database: str) -> AsyncIterator[FastAPI]:
-    application = create_app(make_settings(clean_database))
+async def app(clean_database: str, tmp_path: Path) -> AsyncIterator[FastAPI]:
+    application = create_app(make_settings(clean_database, storage_root=tmp_path / "private"))
     async with application.router.lifespan_context(application):
         yield application
 

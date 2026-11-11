@@ -178,7 +178,7 @@ async def test_business_upgrade_preserves_m02_auth_and_disposable_downgrade(
                 {"user": user_id, "token": "d" * 64, "proof": "e" * 64},
             )
         await engine.dispose()
-        run_migration(migration_database, "upgrade", "head")
+        run_migration(migration_database, "upgrade", "0002_business_foundation")
         async with engine.begin() as db:
             assert (
                 await db.scalar(text("SELECT version_num FROM alembic_version"))
@@ -222,9 +222,127 @@ async def test_business_upgrade_preserves_m02_auth_and_disposable_downgrade(
                 await db.scalar(text("SELECT to_regprocedure('reject_audit_mutation()')")) is None
             )
         await engine.dispose()
-        run_migration(migration_database, "upgrade", "head")
+        run_migration(migration_database, "upgrade", "0002_business_foundation")
         async with engine.begin() as db:
             assert await db.scalar(text("SELECT count(*) FROM users")) == 1
             assert await db.scalar(text("SELECT count(*) FROM service_requests")) == 0
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_intake_upgrade_preserves_seeded_m03_history_and_guards_recovery(
+    migration_database: str,
+) -> None:
+    run_migration(migration_database, "upgrade", "0002_business_foundation")
+    engine = create_async_engine(migration_database, hide_parameters=True)
+    try:
+        async with engine.begin() as db:
+            user = await db.scalar(
+                text(
+                    "INSERT INTO users (telegram_id,display_name) VALUES (424242,'Seeded M03 customer') RETURNING id"
+                )
+            )
+            project = await db.scalar(
+                text(
+                    "INSERT INTO service_projects (customer_id,kind) VALUES (:user,'printing') RETURNING id"
+                ),
+                {"user": user},
+            )
+            request = await db.scalar(
+                text(
+                    "INSERT INTO service_requests (service_project_id,customer_id,service_type,stage_kind,canonical_spec_sha256,customer_notes) VALUES (:project,:user,'printing','printing',:sha,'preserved note') RETURNING id"
+                ),
+                {"project": project, "user": user, "sha": "a" * 64},
+            )
+            audit = await db.scalar(
+                text(
+                    "INSERT INTO audit_logs (actor_user_id,action,entity_id,metadata_snapshot) VALUES (:user,'request.created',:request,'{\"legacy\": true}'::jsonb) RETURNING id"
+                ),
+                {"user": user, "request": request},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO notification_outbox (audit_log_id,recipient_user_id,event_type,payload_minimized) VALUES (:audit,:user,'request.created','{}'::jsonb)"
+                ),
+                {"audit": audit, "user": user},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO idempotency_records (actor_user_id,action,key,request_hash,response_json) VALUES (:user,'request.create','legacy-test-key',:sha,'{\"preserved\": true}'::jsonb)"
+                ),
+                {"user": user, "sha": "b" * 64},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO sessions (user_id,token_hash,init_data_hash,expires_at) VALUES (:user,:token,:proof,now()+interval '1 hour')"
+                ),
+                {"user": user, "token": "c" * 64, "proof": "d" * 64},
+            )
+        await engine.dispose()
+        run_migration(migration_database, "upgrade", "head")
+        async with engine.begin() as db:
+            assert (
+                await db.scalar(text("SELECT version_num FROM alembic_version"))
+                == "0003_printing_intake"
+            )
+            assert (
+                await db.scalar(text("SELECT canonical_spec_sha256 FROM service_requests"))
+                == "a" * 64
+            )
+            assert (
+                await db.scalar(text("SELECT customer_notes FROM service_requests"))
+                == "preserved note"
+            )
+            assert await db.scalar(text("SELECT spec_schema_version FROM service_requests")) == 1
+            assert await db.scalar(text("SELECT token_hash FROM sessions")) == "c" * 64
+            assert (
+                await db.scalar(text("SELECT response_json->>'preserved' FROM idempotency_records"))
+                == "true"
+            )
+            for table in [
+                "users",
+                "sessions",
+                "service_projects",
+                "service_requests",
+                "audit_logs",
+                "notification_outbox",
+                "idempotency_records",
+            ]:
+                assert await db.scalar(text(f"SELECT count(*) FROM {table}")) == 1
+            assert (
+                await db.scalar(
+                    text("SELECT count(*) FROM pg_constraint WHERE conname='fk_item_current_model'")
+                )
+                == 1
+            )
+            assert (
+                await db.scalar(text("SELECT count(*) FROM pg_tables WHERE schemaname='public'"))
+                == 12
+            )
+        await engine.dispose()
+        run_migration(migration_database, "downgrade", "0002_business_foundation")
+        async with engine.begin() as db:
+            assert await db.scalar(text("SELECT to_regclass('public.request_items')")) is None
+            assert await db.scalar(text("SELECT count(*) FROM audit_logs")) == 1
+            assert await db.scalar(text("SELECT count(*) FROM idempotency_records")) == 1
+        await engine.dispose()
+        run_migration(migration_database, "upgrade", "head")
+        async with engine.begin() as db:
+            await db.execute(
+                text(
+                    "INSERT INTO request_items (request_id,customer_id,request_revision) VALUES (:request,:user,1)"
+                ),
+                {"request": request, "user": user},
+            )
+        await engine.dispose()
+        with pytest.raises(subprocess.CalledProcessError):
+            run_migration(migration_database, "downgrade", "0002_business_foundation")
+        async with engine.begin() as db:
+            assert await db.scalar(text("SELECT count(*) FROM request_items")) == 1
+            assert (
+                await db.scalar(text("SELECT version_num FROM alembic_version"))
+                == "0003_printing_intake"
+            )
     finally:
         await engine.dispose()

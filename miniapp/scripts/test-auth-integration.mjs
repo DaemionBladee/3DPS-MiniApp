@@ -10,7 +10,7 @@ import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { chromium } from '@playwright/test'
+import { chromium, expect } from '@playwright/test'
 
 const frontend = fileURLToPath(new URL('..', import.meta.url))
 const backendDirectory = path.resolve(frontend, '../backend')
@@ -167,7 +167,7 @@ try {
     await assertPortFree(apiPort)
   }
   await assertPortFree(gatewayPort)
-  directory = await mkdtemp(path.join(os.tmpdir(), '3dps-m02-browser-'))
+  directory = await mkdtemp(path.join(os.tmpdir(), '3dps-m04-browser-'))
   if (!useContainerApi) {
     backend = spawn(path.join(backendDirectory, '.venv/bin/python'), [
       '-m', 'uvicorn', 'app.main:create_app', '--factory', '--host', '127.0.0.1',
@@ -178,6 +178,7 @@ try {
         ...process.env,
         APP_ENV: 'test', DATABASE_URL: databaseUrl, BOT_TOKEN: syntheticBotToken,
         SESSION_SECRET: randomBytes(32).toString('base64url'), OWNER_TELEGRAM_IDS: '111',
+        STORAGE_ROOT: path.join(directory, 'private-models'),
         PUBLIC_BASE_URL: origin, SIMULATION_MODE: 'true', DEVELOPMENT_AUTH_ENABLED: 'false',
         BINDING_QUOTES_ENABLED: 'false', AUTO_QUOTE_ENABLED: 'false', PAYMENT_POLICY_APPROVED: 'false',
         LIVE_PAYMENTS_ENABLED: 'false', REAL_PRINTING_ENABLED: 'false', AUTH_RATE_LIMIT: '100',
@@ -223,7 +224,7 @@ try {
   await page.reload()
   await page.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
   assert(customerLogins === 1, 'Page reload must restore the real cookie without replaying signed proof.')
-  console.log('PASS 1/7: production React signs in a Customer through real FastAPI/PostgreSQL; secure cookie restores on reload.')
+  console.log('PASS 1/10: production React signs in a Customer through real FastAPI/PostgreSQL; secure cookie restores on reload.')
 
   // M03: a production React mutation crosses the same HTTPS gateway and
   // commits actual projects/requests; no API interception or business mocks.
@@ -256,7 +257,7 @@ try {
   assert((await stranger.request.get(`${origin}/api/v1/projects/${businessDraft.project.id}`)).status() === 404, 'Another Customer must not read its parent project.')
   assert((await stranger.request.get(`${origin}/api/v1/owner/requests`)).status() === 403, 'Customer must not list Owner resources.')
   await stranger.close()
-  console.log('PASS 2/7: production React creates and edits real simulation drafts; gateway CSRF and cross-customer isolation hold.')
+  console.log('PASS 2/10: production React creates and edits real simulation drafts; gateway CSRF and cross-customer isolation hold.')
 
   await page.goto(`${origin}/owner`)
   await page.getByRole('heading', { name: 'Owner access required' }).waitFor()
@@ -264,7 +265,7 @@ try {
   assert(denied === 403, 'Authenticated Customer must be denied by the actual Owner API.')
   assert((await page.evaluate(async () => (await fetch('/api/v1/ready')).status)) === 403, 'Customer must not reach internal Owner readiness.')
   assert((await page.getByRole('group', { name: 'Preview workspace' }).count()) === 0, 'Production must not expose development role overrides.')
-  console.log('PASS 3/7: Customer is denied by both the production Owner route and the actual backend authorization check.')
+  console.log('PASS 3/10: Customer is denied by both the production Owner route and the actual backend authorization check.')
 
   await page.goto(`${origin}/app`)
   await page.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
@@ -291,7 +292,7 @@ try {
   await page.getByRole('button', { name: 'Check sign-in again' }).click()
   await page.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
   assert(customerLogins === 2, 'A fresh Telegram launch must recover after logout, using exactly one new login.')
-  console.log('PASS 4/7: HTTPS proxy Origin/CSRF enforcement, logout/revocation, no proof replay and fresh-launch recovery.')
+  console.log('PASS 4/10: HTTPS proxy Origin/CSRF enforcement, logout/revocation, no proof replay and fresh-launch recovery.')
 
   const owner = await browser.newContext({ ignoreHTTPSErrors: true })
   await installTelegramPresentation(owner, signedLaunch(111))
@@ -308,7 +309,7 @@ try {
   await ownerPage.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
   await ownerPage.getByRole('link', { name: 'Owner workspace', exact: true }).click()
   await ownerPage.getByRole('heading', { name: 'Your workshop, at a glance.' }).waitFor()
-  console.log('PASS 5/7: trusted server-provisioned Owner signs in and navigates both production workspaces.')
+  console.log('PASS 5/10: trusted server-provisioned Owner signs in and navigates both production workspaces.')
   await ownerPage.getByRole('button', { name: 'Load customer drafts' }).click()
   const ownerRow = ownerPage.locator('.request-row').filter({ has: ownerPage.getByText(`${businessNotes} revised`, { exact: true }) })
   await ownerRow.getByLabel('Cancellation reason').fill('M03 browser review complete')
@@ -320,7 +321,85 @@ try {
   await ownerPage.screenshot({ path: path.join(frontend, 'test-results/m03-owner-desktop.png'), fullPage: true })
   const customerView = await customer.request.get(`${origin}/api/v1/requests/${businessDraft.request.id}`)
   assert(customerView.status() === 200 && (await customerView.json()).status === 'cancelled', 'Customer must see the committed Owner transition.')
-  console.log('PASS 6/7: provisioned Owner reviews and cancels the customer draft; Customer reads the committed state.')
+  console.log('PASS 6/10: provisioned Owner reviews and cancels the customer draft; Customer reads the committed state.')
+  // M04: full printing intake; all API requests use the actual backend.
+  await page.goto(`${origin}/app/requests/new`)
+  const printNotes = `M04 private print ${randomUUID()}`
+  await page.getByLabel('Project notes (optional)').fill(printNotes)
+  await page.getByRole('button', { name: 'Create printing draft', exact: true }).click()
+  await page.getByRole('heading', { name: 'Your printing draft' }).waitFor()
+  const printingId = new URL(page.url()).pathname.split('/').at(-1)
+  assert(printingId, 'Printing draft must have a durable identifier.')
+  const stl = Buffer.from('solid test\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid test\n')
+  const obj = Buffer.from('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n')
+  await page.getByLabel('Choose model files', { exact: true }).setInputFiles([
+    { name: 'triangle.stl', mimeType: 'application/octet-stream', buffer: stl },
+    { name: 'triangle.obj', mimeType: 'application/octet-stream', buffer: obj },
+  ])
+  await expect(page.getByText('Format checked', { exact: true })).toHaveCount(2)
+  await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeEnabled()
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  for (let index = 1; index <= 2; index++) {
+    const item = page.getByRole('region', { name: `Print item ${index}`, exact: true })
+    const update = page.waitForResponse(response => response.request().method() === 'PATCH' && response.url().includes(`/requests/${printingId}/items/`))
+    await item.getByLabel('Material', { exact: true }).selectOption('dev-pla')
+    await item.getByLabel('Color', { exact: true }).selectOption('dev-white')
+    await item.getByLabel('Quality', { exact: true }).selectOption('dev-standard')
+    await item.getByLabel('I confirm these are the model’s intended units').check()
+    if (index === 1) await item.getByLabel('Special requirements', { exact: true }).fill('Owner review: keep the visible face clean.')
+    assert((await update).status() === 200, 'Item settings must autosave through the real versioned API.')
+    await expect(item.getByText('Settings saved', { exact: true })).toBeVisible()
+  }
+  await page.reload()
+  await page.getByRole('heading', { name: 'Your printing draft' }).waitFor()
+  await expect(page.getByText('Format checked', { exact: true })).toHaveCount(2)
+  const recovered = await (await customer.request.get(`${origin}/api/v1/requests/${printingId}/intake`)).json()
+  assert(recovered.items.length === 2 && recovered.items.every(item => item.specification.unit_confirmed && item.specification.material_key === 'dev-pla'), 'Draft models and autosaved settings must survive WebView reload.')
+  await page.getByRole('button', { name: '3. Fulfillment', exact: true }).click()
+  const preferences = page.waitForResponse(response => response.request().method() === 'PATCH' && response.url().endsWith(`/requests/${printingId}/intake`))
+  await page.getByLabel('Preferred handoff', { exact: true }).selectOption('delivery')
+  await page.getByLabel('Fulfillment notes (optional)').fill('Contact me before arranging delivery.')
+  assert((await preferences).status() === 200, 'Fulfillment preferences must autosave to PostgreSQL.')
+  await expect(page.getByText('Preferences saved', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '4. Review', exact: true }).click()
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Mobile printing wizard must not overflow horizontally.')
+  await page.screenshot({ path: path.join(frontend, 'test-results/m04-customer-mobile.png'), fullPage: true })
+  const submission = page.waitForResponse(response => response.request().method() === 'POST' && response.url().endsWith(`/requests/${printingId}/submit`))
+  await page.getByRole('button', { name: 'Submit printing request', exact: true }).click()
+  const submittedResponse = await submission
+  assert(submittedResponse.status() === 200, 'Completed printing draft must submit successfully.')
+  const submitted = await submittedResponse.json()
+  await page.getByRole('heading', { name: 'Printing request submitted', exact: true }).waitFor()
+  await page.getByRole('heading', { name: 'Pending analysis', exact: true }).waitFor()
+  assert(submitted.tasks.length === 2 && submitted.tasks.every(task => task.state === 'pending'), 'Submission creates one pending task per model; no fake analysis.')
+  assert((await page.evaluate(() => Object.keys(localStorage))).length === 0, 'Printing intake must not persist private data in localStorage.')
+  console.log('PASS 8/10: mobile multi-model upload, autosave, reload recovery, preferences and validated submission persist through real APIs.')
+
+  const outsider = await browser.newContext({ ignoreHTTPSErrors: true })
+  assert((await outsider.request.post(`${origin}/api/v1/auth/telegram`, { headers: { Origin: origin }, data: { init_data: signedLaunch(224) } })).status() === 200)
+  const fileId = submitted.items[0].model_file.id
+  for (const resource of [`requests/${printingId}/intake`, `requests/${printingId}/analysis`, `files/${fileId}`, `files/${fileId}/download`]) {
+    assert((await outsider.request.get(`${origin}/api/v1/${resource}`)).status() === 404, 'Another customer must not read private printing data or models.')
+  }
+  const download = await customer.request.get(`${origin}/api/v1/files/${fileId}/download`)
+  assert(download.status() === 200 && (await download.body()).equals(stl), 'Authorized download must return exact private model bytes.')
+  assert(download.headers()['cache-control'] === 'no-store' && download.headers()['x-content-type-options'] === 'nosniff', 'Downloads must prevent caching and sniffing.')
+  await outsider.close()
+  console.log('PASS 9/10: cross-customer file/intake/task denial and authenticated private download through HTTPS.')
+
+  await ownerPage.goto(`${origin}/owner`)
+  await ownerPage.getByRole('button', { name: 'Load submitted printing requests', exact: true }).click()
+  await ownerPage.getByRole('link', { name: `Inspect printing request ${printingId.slice(0, 8)}`, exact: true }).click()
+  await ownerPage.getByRole('heading', { name: 'Printing request submitted', exact: true }).waitFor()
+  await expect(ownerPage.getByText('Owner review: keep the visible face clean.', { exact: true })).toBeVisible()
+  assert((await ownerPage.getByRole('button', { name: 'Submit printing request', exact: true }).count()) === 0, 'Owner inspection cannot impersonate customer editing.')
+  const ownerDownload = ownerPage.waitForEvent('download')
+  await ownerPage.getByRole('button', { name: 'Download private model', exact: true }).first().click()
+  assert((await ownerDownload).suggestedFilename() === 'triangle.stl', 'Owner must download the authorized private file.')
+  await ownerPage.screenshot({ path: path.join(frontend, 'test-results/m04-owner-desktop.png'), fullPage: true })
+  const analysis = await (await owner.request.get(`${origin}/api/v1/requests/${printingId}/analysis`)).json()
+  assert(analysis.state === 'pending' && analysis.processing_available === false, 'Pending analysis must never claim a running or completed worker.')
+  console.log('PASS 10/10: Owner queue, special requirements, private download and pending-analysis inspection.')
   await customer.close()
   await owner.close()
 
@@ -336,13 +415,13 @@ try {
   await forgedPage.getByRole('button', { name: 'Check sign-in again' }).click()
   await forgedPage.getByRole('heading', { name: 'Your workshop, at a glance.' }).waitFor()
   assert((await forgedPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 200, 'A fresh valid proof must recover from an earlier rejected login.')
-  console.log('PASS 7/7: forged launch rejected; fresh valid launch recovers through the real backend.')
+  console.log('PASS 7/10: forged launch rejected; fresh valid launch recovers through the real backend.')
   await forged.close()
-  console.log('M02 + M03 real-stack integration: 7 flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.')
+  console.log('M02 + M03 + M04 real-stack integration: 10 flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.')
   if (useContainerApi) console.log('Container API mode PASS: packaged application used; caller owns container cleanup.')
 } catch (error) {
   // Assertion/selector diagnostics contain no signed proofs or credential values.
-  console.error(`M02 + M03 real-stack integration FAILED: ${error instanceof Error ? error.message : 'unknown test failure'}`)
+  console.error(`M02 + M03 + M04 real-stack integration FAILED: ${error instanceof Error ? error.message : 'unknown test failure'}`)
   process.exitCode = 1
 } finally {
   if (browser) await browser.close().catch(() => {})

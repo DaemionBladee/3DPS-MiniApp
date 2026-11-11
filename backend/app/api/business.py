@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy import select, text
 
 from app.api.auth import (
@@ -23,6 +23,9 @@ from app.api.business_schemas import (
 from app.api.schemas import StatusResponse
 from app.core.errors import AuthError
 from app.database.business_models import ServiceProject, ServiceRequest
+from app.domain.types import RequestStatus, StageKind
+from app.intake.rate_limits import consume_rate
+from app.services.auth import Principal
 from app.services.requests import create_request, transition_request, update_draft
 
 router = APIRouter(prefix="/api/v1", tags=["business-foundation"])
@@ -31,6 +34,16 @@ CommandKey = Annotated[
 ]
 PageLimit = Annotated[int, Query(ge=1, le=100)]
 PageOffset = Annotated[int, Query(ge=0, le=10000)]
+
+
+async def require_business_write(
+    principal: WritePrincipalDependency, factory: FactoryDependency, settings: SettingsDependency
+) -> Principal:
+    await consume_rate(factory, settings, principal, "intake")
+    return principal
+
+
+BusinessPrincipalDependency = Annotated[Principal, Depends(require_business_write)]
 
 
 def require_owner(principal: PrincipalDependency) -> None:
@@ -42,7 +55,7 @@ def require_owner(principal: PrincipalDependency) -> None:
 async def create(
     body: CreateRequest,
     key: CommandKey,
-    principal: WritePrincipalDependency,
+    principal: BusinessPrincipalDependency,
     settings: SettingsDependency,
     factory: FactoryDependency,
 ) -> ProjectRequestResponse:
@@ -78,13 +91,19 @@ async def owner_requests(
     factory: FactoryDependency,
     limit: PageLimit = 20,
     offset: PageOffset = 0,
+    status: RequestStatus | None = None,
+    stage_kind: StageKind | None = None,
 ) -> RequestPage:
     require_owner(principal)
+    statement = select(ServiceRequest)
+    if status is not None:
+        statement = statement.where(ServiceRequest.status == status)
+    if stage_kind is not None:
+        statement = statement.where(ServiceRequest.stage_kind == stage_kind)
     async with factory() as db:
         rows = (
             await db.scalars(
-                select(ServiceRequest)
-                .order_by(ServiceRequest.created_at, ServiceRequest.id)
+                statement.order_by(ServiceRequest.created_at, ServiceRequest.id)
                 .offset(offset)
                 .limit(limit + 1)
             )
@@ -111,7 +130,7 @@ async def patch(
     request_id: UUID,
     body: DraftPatch,
     key: CommandKey,
-    principal: WritePrincipalDependency,
+    principal: BusinessPrincipalDependency,
     settings: SettingsDependency,
     factory: FactoryDependency,
 ) -> RequestResponse:
@@ -123,7 +142,7 @@ async def change_status(
     request_id: UUID,
     body: RequestTransition,
     key: CommandKey,
-    principal: WritePrincipalDependency,
+    principal: BusinessPrincipalDependency,
     settings: SettingsDependency,
     factory: FactoryDependency,
 ) -> RequestResponse:
@@ -170,7 +189,7 @@ async def readiness(principal: PrincipalDependency, factory: FactoryDependency) 
     async with factory() as db:
         if (
             await db.scalar(text("SELECT version_num FROM alembic_version"))
-            != "0002_business_foundation"
+            != "0003_printing_intake"
         ):
             raise AuthError(503, "schema_not_ready", "The service schema is not ready.")
     return StatusResponse()

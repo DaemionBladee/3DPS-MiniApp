@@ -10,7 +10,7 @@ export function AppShell() {
   const auth = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const ownerView = location.pathname === '/owner'
+  const ownerView = location.pathname === '/owner' || location.pathname.startsWith('/owner/')
 
   function switchWorkspace(role: 'customer' | 'owner') {
     telegram.setMockRole(role)

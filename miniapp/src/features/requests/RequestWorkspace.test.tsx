@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -9,7 +10,7 @@ const session: AuthResponse = { user: { id: 'customer-id', telegram_id: '123', d
 const row: components['schemas']['RequestResponse'] = { id: 'request-id', service_project_id: 'project-id', customer_id: 'customer-id', service_type: 'printing', stage_kind: 'printing', mode: 'simulation', status: 'draft', version: 1, revision: 1, canonical_spec_sha256: 'a'.repeat(64), customer_notes: 'Original notes', created_at: '2026-11-11T00:00:00Z', updated_at: '2026-11-11T00:00:00Z' }
 function mount(owner = false, authenticated = true) {
   const auth: AuthContextValue = { status: authenticated ? 'authenticated' : 'unauthenticated', session: authenticated ? session : null, error: null, isLoggingOut: false, refreshSession: vi.fn(), logout: vi.fn() }
-  return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><AuthContext.Provider value={auth}><RequestWorkspace owner={owner} /></AuthContext.Provider></QueryClientProvider>)
+  return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><AuthContext.Provider value={auth}><MemoryRouter><RequestWorkspace owner={owner} /></MemoryRouter></AuthContext.Provider></QueryClientProvider>)
 }
 const page = (items = [row], next_offset: number | null = null) => Response.json({ items, next_offset })
 beforeEach(() => { vi.restoreAllMocks() })

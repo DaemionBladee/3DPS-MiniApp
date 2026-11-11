@@ -1,10 +1,11 @@
 # System architecture and implementation boundaries
 
-M03's implemented slice and transaction choices are recorded in
-[ADR 0003](adr/0003-business-transaction-foundation.md) and
-[BUSINESS_FOUNDATION.md](BUSINESS_FOUNDATION.md). The broader runtime below
-remains a target: file workers, quotation/payment services and notification
-delivery are not introduced by M03.
+M04 extends the modular monolith with private printing intake. See
+[ADR 0004](adr/0004-private-printing-intake.md), [PRINTING_INTAKE.md](PRINTING_INTAKE.md)
+and [the implementation report](M04_IMPLEMENTATION_REPORT.md). M02 authentication
+and M03 transaction primitives remain in use. A bounded validation subprocess
+checks structure; durable model-analysis tasks stay pending. No queue consumer,
+slicer, notification delivery or commercial service is introduced.
 
 ## Target runtime (single monorepo; modular monolith)
 ```

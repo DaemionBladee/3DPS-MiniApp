@@ -2,6 +2,17 @@
 
 **Status:** design contract, not an applied migration. Codex must audit actual existing tables before implementing; do not drop tables or user data. Use SQLAlchemy 2 async, Alembic migrations, PostgreSQL constraints and indexes.
 
+## Implemented M04 schema
+
+The single applied chain is `0001_auth_foundation -> 0002_business_foundation ->
+0003_printing_intake`. M04 adds only `request_items`, `uploaded_files` and
+`processing_tasks`, plus fulfillment and frozen submission fields on existing
+requests. Existing authentication/business rows and original hashes survive the
+upgrade. [ADR 0004](adr/0004-private-printing-intake.md) specifies composite FKs,
+quota reservations, revision hashes and immutable provenance. Material/color/
+quality keys are labeled development choices, not FK claims about future stock
+or printer profiles. The broader logical schema below remains a design target.
+
 ## Conventions
 - `id` internal primary key (prefer UUID for externally referenced entities, or bigint with opaque public ID; choose consistently during M00).
 - `created_at`, `updated_at`: timezone-aware UTC. Add `version` integer to mutable workflow records for optimistic concurrency.

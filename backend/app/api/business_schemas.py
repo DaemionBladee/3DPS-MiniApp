@@ -27,11 +27,13 @@ class CreateRequest(BusinessInput):
 class DraftPatch(BusinessInput):
     expected_version: int = Field(ge=1)
     customer_notes: str = Field(max_length=2000)
+    fulfillment_method: Literal["pickup", "delivery"] | None = None
+    fulfillment_notes: str | None = Field(default=None, max_length=1000)
 
-    @field_validator("customer_notes")
+    @field_validator("customer_notes", "fulfillment_notes")
     @classmethod
-    def safe_notes(cls, value: str) -> str:
-        return CreateRequest.safe_notes(value)
+    def safe_notes(cls, value: str | None) -> str | None:
+        return CreateRequest.safe_notes(value) if value is not None else None
 
 
 class RequestTransition(BusinessInput):

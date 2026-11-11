@@ -1,3 +1,5 @@
+import { NewPrintRequest } from '../features/printing/NewPrintRequest'
+import { PrintRequestPage } from '../features/printing/PrintRequestPage'
 import { Component, useCallback, useEffect, type PropsWithChildren } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
@@ -25,7 +27,7 @@ class AppErrorBoundary extends Component<PropsWithChildren, { failed: boolean }>
 function RoutePresentation() {
   const location = useLocation()
   const navigate = useNavigate()
-  const goBack = useCallback(() => { void navigate('/app') }, [navigate])
+  const goBack = useCallback(() => { void navigate(location.pathname.startsWith('/owner/') ? '/owner' : '/app') }, [navigate, location.pathname])
   useTelegramBackButton(location.pathname !== '/' && location.pathname !== '/app', goBack)
   useEffect(() => {
     document.title = location.pathname === '/owner' ? 'Owner workspace · 3DPS' : 'Your making space · 3DPS'
@@ -36,6 +38,10 @@ function RoutePresentation() {
     <Route element={<AppShell />}>
       <Route index element={<Navigate to="/app" replace />} />
       <Route path="app" element={<><CustomerDashboard /><ServiceConnection /></>} />
+      <Route path="app/requests/new" element={<NewPrintRequest />} />
+      <Route path="app/requests/print" element={<NewPrintRequest />} />
+      <Route path="app/requests/:requestId" element={<PrintRequestPage />} />
+      <Route path="owner/requests/:requestId" element={<PrintRequestPage owner />} />
       <Route path="owner" element={<><OwnerDashboard /><ServiceConnection /></>} />
       <Route path="*" element={<NotFound />} />
     </Route>

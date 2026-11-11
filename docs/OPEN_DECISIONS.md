@@ -65,3 +65,17 @@ These contract-completion items have implementation deadlines; the earlier live
 policy decisions have release deadlines. Neither is approval to implement later
 milestones in M00. Pricing, rounding values, actual printers, legal classification,
 provider availability, production credentials and live switches remain undecided.
+
+## M04 implementation choices awaiting review — 2026-11-11 (Asia/Rangoon)
+
+M03 was accepted by the M04 start instruction. [ADR 0004](adr/0004-private-printing-intake.md)
+records the implemented private intake slice; none of these choices enables a
+live service or closes G1. Existing commercial decisions remain open.
+
+| Item | Safe implemented behavior | Evidence needed before expansion |
+|---|---|---|
+| Upload quotas and supported profile | Conservative limits; standalone STL/OBJ and one-part Core 3MF; development-only catalog | Owner review of quotas, clean-export guidance and intended real model corpus before public intake |
+| Retention and deletion | Ready/cancelled model files retained and charged; expired/failed uploads cleaned with durable reservations | Retention/consent/deletion policy, encryption, backup/restore and approved cleanup schedule before public customer data |
+| Validation isolation | Cleared-environment resource-bounded stdlib subprocess; no model execution or network-fetch code | Stronger UID/mount/network or VM isolation and adversarial security review before M06/public exposure |
+| Submitted corrections | Submitted snapshot/items are frozen; no reopening/overwrite endpoint | Explicit clarification/successor-revision workflow and stale downstream invalidation before later approvals |
+| Real Telegram uploads/downloads | Desktop Chromium HTTPS tests pass; real WebViews unverified | Android/iOS/Desktop test-bot evidence, gateway limits and download compatibility before G1/public launch |

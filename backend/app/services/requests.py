@@ -23,6 +23,7 @@ from app.database.business_models import (
 from app.database.models import User
 from app.domain.requests import initial_stage, specification_hash, transition
 from app.services.auth import Principal
+from app.services.specifications import refresh_spec
 from app.services.transactions import execute_command
 
 
@@ -106,6 +107,7 @@ async def create_request(
         )
         db.add(row)
         await db.flush()
+        await refresh_spec(db, row, advance=False)
         await record_event(db, user, row, "request.created", None)
         return ProjectRequestResponse(
             project=ProjectResponse.model_validate(project),
@@ -144,13 +146,12 @@ async def update_draft(
             raise AuthError(403, "customer_edit_required", "Only the customer can edit this draft.")
         if row.status != "draft":
             raise AuthError(409, "invalid_transition", "This request is no longer a draft.")
-        row.customer_notes = body.customer_notes
-        row.revision += 1
-        row.version += 1
-        row.updated_at = datetime.now(UTC)
-        row.canonical_spec_sha256 = specification_hash(
-            row.service_type, row.stage_kind, row.customer_notes
-        )
+        changes = body.model_dump(exclude={"expected_version"}, exclude_none=True)
+        if all(getattr(row, field) == value for field, value in changes.items()):
+            return RequestResponse.model_validate(row)
+        for field, value in changes.items():
+            setattr(row, field, value)
+        await refresh_spec(db, row)
         await record_event(db, user, row, "request.draft_updated", "draft")
         return RequestResponse.model_validate(row)
 

@@ -13,3 +13,6 @@
 **/playwright-report
 .local
 attachments
+
+**/.local
+**/private_models

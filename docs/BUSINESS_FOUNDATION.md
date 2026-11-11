@@ -1,4 +1,9 @@
-# M03 business foundation runbook
+# Business foundation runbook
+
+M03 behavior below is historical. M04 now adds validated printing submission and
+private intake; current migration head is `0003_printing_intake`. Use
+[PRINTING_INTAKE.md](PRINTING_INTAKE.md) for current contracts and recovery.
+Design submission and downstream operations remain unavailable.
 
 M03 adds authenticated simulation drafts, not customer intake or commercial
 operations. See [ADR 0003](adr/0003-business-transaction-foundation.md) and

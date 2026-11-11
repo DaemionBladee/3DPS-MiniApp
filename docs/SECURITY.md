@@ -1,10 +1,13 @@
 # Security requirements and verification plan
 
-M02 implements the authentication/session subset described in
-[AUTHENTICATION.md](AUTHENTICATION.md) and ADR 0002. Other domain, upload,
-financial and deployment requirements below remain future acceptance contracts.
-Automated real-PostgreSQL and production-browser auth tests do not establish
-actual Telegram device/G1 readiness; that gate remains pending external checks.
+Implemented security includes M02 verified Telegram sessions, M03 resource
+permissions and M04 private uploads. See [AUTHENTICATION.md](AUTHENTICATION.md),
+[PRINTING_INTAKE.md](PRINTING_INTAKE.md) and ADRs 0002–0004. Uploads are not
+public/static assets. Structural validation runs with cleared environment,
+closed inherited descriptors and resource limits; this is not a full OS sandbox.
+Worker network/filesystem isolation and adversarial parser hardening remain
+explicit prerequisites for M06 and public release. Later payment, production
+and delivery controls below remain contracts, not implemented capabilities.
 
 ## Primary risks
 - Forged Telegram identity; stolen Telegram session; owner impersonation.

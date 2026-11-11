@@ -93,7 +93,7 @@ test('local preview supports keyboard navigation and does not silently add futur
   await page.getByRole('button', { name: 'Owner', exact: true }).focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { name: 'Your workshop, at a glance.' })).toBeVisible()
-  await page.goto('http://127.0.0.1:5173/app/requests/new')
+  await page.goto('http://127.0.0.1:5173/app/orders/new')
   await expect(page.getByRole('heading', { name: 'This idea hasn’t taken shape.' })).toBeVisible()
   await page.getByRole('link', { name: /overview|workspace|home/i }).first().click()
   await expect(page.getByRole('heading', { name: 'Your next idea, made real.' })).toBeVisible()

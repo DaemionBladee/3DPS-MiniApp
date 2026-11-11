@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useAuth } from '../features/auth/context'
 import { RequestWorkspace } from '../features/requests/RequestWorkspace'
 import { ArrowRight, Box, Cuboid, Layers3, PackageOpen, PenTool, ShieldCheck, Sparkles } from 'lucide-react'
@@ -27,7 +28,8 @@ export default function CustomerDashboard() {
           <h2 id="hero-title">From possibility<br />to something real.</h2>
           <p>{session ? "Save a simulation project draft and add your ideas for printing or custom design." : "Explore a simpler home for 3D printing and custom design. Your next project will begin here."}</p>
           <Button disabled={!session} aria-describedby="request-later" onClick={() => document.getElementById('projects-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{session ? 'View project drafts' : 'Start a project'}<ArrowRight size={17} aria-hidden="true" /></Button>
-          <span id="request-later" className="hero-note">{session ? "Save a draft below. File intake and submission open in a later release." : "Project requests are coming in a later release."}</span>
+          {session && <Link className="button button--primary" to="/app/requests/new">New printing request</Link>}
+          <span id="request-later" className="hero-note">{session ? "Save and submit a private simulation printing request." : "Project requests are coming in a later release."}</span>
         </div>
         <div className="hero-art" aria-hidden="true">
           <div className="art-grid" />

@@ -1,14 +1,10 @@
 # HTTP API contract — proposal for FastAPI + React
 
-M02 authentication and the M03 initial project/request slice are implemented.
-See [BUSINESS_FOUNDATION.md](BUSINESS_FOUNDATION.md),
-[AUTHENTICATION.md](AUTHENTICATION.md) and `backend/openapi.json` for the actual
-schema. Specifically, M03 implements project/request list/detail/create,
-draft notes PATCH, reasoned cancellation through `/requests/{id}/transitions`,
-Owner request listing and Owner-protected readiness. Submission remains blocked.
-All other business endpoints below are **planned contracts**, including uploads,
-`/submit`, design scope, quotes, orders and payments. Regenerate frontend types
-after schema changes; a planned endpoint is not an implemented capability.
+M02 authentication, M03 project/request APIs and M04 private printing intake
+are implemented. The actual OpenAPI export is `backend/openapi.json`; generated
+React types are `miniapp/src/lib/api/schema.d.ts`. The exact M04 wire contract,
+including raw binary upload headers, is in [PRINTING_INTAKE.md](PRINTING_INTAKE.md).
+The future design, quotation, payment and production routes below remain plans.
 
 ## Cross-cutting conventions
 - Prefix all application routes with `/api/v1` and serve from same HTTPS origin as Mini App.
