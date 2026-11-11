@@ -1,16 +1,20 @@
 # HTTP API contract — proposal for FastAPI + React
 
-M02 implements only authentication, the owner/self auth fixtures and liveness;
-see [AUTHENTICATION.md](AUTHENTICATION.md) and `backend/openapi.json` for the
-actual schema. All business-domain endpoints below remain **planned contracts**.
-Regenerate frontend types after schema changes; no planned endpoint is implied
-to work merely because it appears in this document.
+M02 authentication and the M03 initial project/request slice are implemented.
+See [BUSINESS_FOUNDATION.md](BUSINESS_FOUNDATION.md),
+[AUTHENTICATION.md](AUTHENTICATION.md) and `backend/openapi.json` for the actual
+schema. Specifically, M03 implements project/request list/detail/create,
+draft notes PATCH, reasoned cancellation through `/requests/{id}/transitions`,
+Owner request listing and Owner-protected readiness. Submission remains blocked.
+All other business endpoints below are **planned contracts**, including uploads,
+`/submit`, design scope, quotes, orders and payments. Regenerate frontend types
+after schema changes; a planned endpoint is not an implemented capability.
 
 ## Cross-cutting conventions
 - Prefix all application routes with `/api/v1` and serve from same HTTPS origin as Mini App.
 - Authentication: server-side Telegram verified `initData` -> secure session cookie. No Telegram bot token in frontend.
 - Response body uses typed Pydantic schemas; money values serialized as decimal strings; timestamp ISO 8601 with offsets; opaque IDs to frontend.
-- Pagination: cursor or `limit` + `next_cursor`, never unbounded lists. Filtering/sorting allowlisted.
+- Pagination: bounded lists only. M03 uses `limit` (1–100), `offset` (0–10000), `items` and `next_offset`; see ADR 0003. Future cursor/filter contracts must be explicit.
 - Errors: documented `application/problem+json` or consistent JSON error schema (`code`, `message`, `details`, `correlation_id`); avoid leaking internals.
 - For side effects, expect `Idempotency-Key` for financial/approval/transition commands and CSRF defenses for all cookie-authenticated mutations (including uploads). On conflict/stale version return 409, unauthorized 401, forbidden 403, not-found 404. Return 422 for schema validation failures, 413 for oversize uploads when applicable.
 - **Quotations, orders, and payment obligations explicitly store `mode`, `stage`, `currency_code`, and permitted `payment_category`.** Payment attempts/verifications/refunds inherit and must validate these attributes through their immutable obligation relationship; do not duplicate mutable financial fields unnecessarily. The backend rejects cross-mode transitions, and no simulation record can be promoted by flipping an environment flag. **One project+stage may have at most one active payable order; duplicate quote-version acceptance conflicts. Verified external transaction keys are unique across obligations.** See `docs/PAYMENTS_COMPLIANCE.md` and `docs/INTEGRITY_RULES.md`.
@@ -25,7 +29,7 @@ to work merely because it appears in this document.
 | POST | `/api/v1/auth/logout` | Revoke session | Authenticated |
 | GET | `/api/v1/catalog/materials` | Available materials/colors/quality presets | Authenticated |
 | GET | `/api/v1/health` | Liveness (no secrets) | Public |
-| GET | `/api/v1/ready` | Readiness (do not reveal credentials) | Internal |
+| GET | `/api/v1/ready` | M03 DB/schema readiness (no credentials) | Owner; internal gateway policy for deployment |
 
 ## Customer requests and uploads
 | Method | Endpoint | Purpose |

@@ -7,6 +7,7 @@ from sqlalchemy import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
+from app.database import business_models  # noqa: F401 -- register M03 metadata
 from app.database.models import Base
 
 target_metadata = Base.metadata

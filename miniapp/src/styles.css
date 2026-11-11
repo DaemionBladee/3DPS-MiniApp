@@ -264,3 +264,15 @@ h1 { font-size: clamp(24px, 2.5vw, 34px); letter-spacing: -1.2px; line-height: 1
 .workspace-identity > span:not(.avatar) { max-width: 160px; overflow-wrap: anywhere; }
 .session-error { padding: 16px 24px; color: var(--app-text); border-bottom: 1px solid var(--app-line); }
 @media (max-width: 700px) { .workspace-header { gap: 12px; flex-wrap: wrap; } .primary-nav { display: flex; flex-wrap: wrap; justify-content: flex-end; } }
+
+.request-workspace { text-align: left; }
+.request-workspace > p, .request-meta { color: var(--app-muted); font-size: 13px; }
+.request-workspace form { display: grid; gap: 10px; margin-block: 20px; }
+.request-workspace label { font-size: 14px; font-weight: 600; }
+.request-workspace input, .request-workspace select, .request-workspace textarea { width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--app-line); border-radius: 8px; padding: 10px; background: var(--app-bg); color: var(--app-text); font: inherit; }
+.request-workspace textarea { min-height: 90px; resize: vertical; }
+.request-list { list-style: none; padding: 0; margin: 20px 0; }
+.request-row { padding-block: 20px; border-top: 1px solid var(--app-line); overflow-wrap: anywhere; }
+.request-row h3 { margin: 0; }
+.request-notes { white-space: pre-wrap; }
+.request-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }

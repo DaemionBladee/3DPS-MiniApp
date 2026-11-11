@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
 import { createHmac, randomBytes, randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import http from 'node:http'
 import https from 'node:https'
 import net from 'node:net'
@@ -20,6 +20,9 @@ const gatewayPort = 18443
 const origin = `https://127.0.0.1:${gatewayPort}`
 const syntheticBotToken = 'm02-integration-synthetic-bot-token'
 const cookieName = '__Host-3dps_session'
+// Test harness only: a caller-owned image may replace the local Python child.
+// The API address remains fixed to loopback; never select a remote/live API.
+const useContainerApi = process.env.TEST_CONTAINER_API === 'true'
 
 function safeDatabaseUrl() {
   const value = process.env.TEST_BROWSER_DATABASE_URL
@@ -78,7 +81,7 @@ async function waitForBackend(child) {
   // Leave room for the final bounded probe inside the 15-second startup budget.
   const deadline = Date.now() + 14_000
   while (Date.now() < deadline) {
-    if (child.exitCode !== null || child.signalCode !== null) throw new Error('The disposable backend exited before readiness.')
+    if (child && (child.exitCode !== null || child.signalCode !== null)) throw new Error('The disposable backend exited before readiness.')
     try {
       const response = await fetch(`http://127.0.0.1:${apiPort}/api/v1/health`, { signal: AbortSignal.timeout(750) })
       if (response.ok && (await response.json()).status === 'ok') return
@@ -159,28 +162,32 @@ let browser
 try {
   const databaseUrl = safeDatabaseUrl()
   assert(existsSync(path.join(dist, 'index.html')), 'Build the actual production frontend before this integration test.')
-  assert(existsSync(path.join(backendDirectory, '.venv/bin/python')), 'Install the backend test environment first.')
-  await assertPortFree(apiPort)
+  if (!useContainerApi) {
+    assert(existsSync(path.join(backendDirectory, '.venv/bin/python')), 'Install the backend test environment first.')
+    await assertPortFree(apiPort)
+  }
   await assertPortFree(gatewayPort)
   directory = await mkdtemp(path.join(os.tmpdir(), '3dps-m02-browser-'))
-  backend = spawn(path.join(backendDirectory, '.venv/bin/python'), [
-    '-m', 'uvicorn', 'app.main:create_app', '--factory', '--host', '127.0.0.1',
-    '--port', String(apiPort), '--no-proxy-headers', '--no-access-log',
-  ], {
-    cwd: backendDirectory,
-    env: {
-      ...process.env,
-      APP_ENV: 'test', DATABASE_URL: databaseUrl, BOT_TOKEN: syntheticBotToken,
-      SESSION_SECRET: randomBytes(32).toString('base64url'), OWNER_TELEGRAM_IDS: '111',
-      PUBLIC_BASE_URL: origin, SIMULATION_MODE: 'true', DEVELOPMENT_AUTH_ENABLED: 'false',
-      BINDING_QUOTES_ENABLED: 'false', AUTO_QUOTE_ENABLED: 'false', PAYMENT_POLICY_APPROVED: 'false',
-      LIVE_PAYMENTS_ENABLED: 'false', REAL_PRINTING_ENABLED: 'false', AUTH_RATE_LIMIT: '100',
-    },
-    stdio: ['ignore', 'ignore', 'pipe'],
-  })
-  // Never echo child logs, signed launch data, cookies or configured secrets.
-  backend.stderr.resume()
-  backend.on('error', () => { /* Readiness produces a safe diagnostic. */ })
+  if (!useContainerApi) {
+    backend = spawn(path.join(backendDirectory, '.venv/bin/python'), [
+      '-m', 'uvicorn', 'app.main:create_app', '--factory', '--host', '127.0.0.1',
+      '--port', String(apiPort), '--no-proxy-headers', '--no-access-log',
+    ], {
+      cwd: backendDirectory,
+      env: {
+        ...process.env,
+        APP_ENV: 'test', DATABASE_URL: databaseUrl, BOT_TOKEN: syntheticBotToken,
+        SESSION_SECRET: randomBytes(32).toString('base64url'), OWNER_TELEGRAM_IDS: '111',
+        PUBLIC_BASE_URL: origin, SIMULATION_MODE: 'true', DEVELOPMENT_AUTH_ENABLED: 'false',
+        BINDING_QUOTES_ENABLED: 'false', AUTO_QUOTE_ENABLED: 'false', PAYMENT_POLICY_APPROVED: 'false',
+        LIVE_PAYMENTS_ENABLED: 'false', REAL_PRINTING_ENABLED: 'false', AUTH_RATE_LIMIT: '100',
+      },
+      stdio: ['ignore', 'ignore', 'pipe'],
+    })
+    // Never echo child logs, signed launch data, cookies or configured secrets.
+    backend.stderr.resume()
+    backend.on('error', () => { /* Readiness produces a safe diagnostic. */ })
+  }
   await waitForBackend(backend)
   gateway = await createGateway(directory)
   browser = await chromium.launch({
@@ -216,14 +223,48 @@ try {
   await page.reload()
   await page.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
   assert(customerLogins === 1, 'Page reload must restore the real cookie without replaying signed proof.')
-  console.log('PASS 1/5: production React signs in a Customer through real FastAPI/PostgreSQL; secure cookie restores on reload.')
+  console.log('PASS 1/7: production React signs in a Customer through real FastAPI/PostgreSQL; secure cookie restores on reload.')
+
+  // M03: a production React mutation crosses the same HTTPS gateway and
+  // commits actual projects/requests; no API interception or business mocks.
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: 'Open project drafts' }).click()
+  await page.getByLabel('Service', { exact: true }).selectOption('design_and_print')
+  const businessNotes = `M03 browser draft ${randomUUID()}`
+  await page.getByLabel('Project notes (optional)').fill(businessNotes)
+  const creation = page.waitForResponse(response => response.request().method() === 'POST' && response.url().endsWith('/api/v1/requests'))
+  await page.getByRole('button', { name: 'Save simulation draft' }).click()
+  const createdResponse = await creation
+  assert(createdResponse.status() === 201, 'React must create a real simulation project and draft.')
+  const businessDraft = await createdResponse.json()
+  assert(businessDraft.request.stage_kind === 'design' && businessDraft.project.mode === 'simulation', 'Combined projects must begin with a simulation design stage.')
+  const draftEditor = page.locator(`#notes-${businessDraft.request.id}`)
+  await draftEditor.fill(`${businessNotes} revised`)
+  const update = page.waitForResponse(response => response.request().method() === 'PATCH' && response.url().endsWith(`/requests/${businessDraft.request.id}`))
+  await page.locator('form').filter({ has: draftEditor }).getByRole('button', { name: 'Save changes', exact: true }).click()
+  const updatedResponse = await update
+  assert(updatedResponse.status() === 200 && (await updatedResponse.json()).version === 2, 'React must update the actual versioned draft.')
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Mobile draft workspace must not overflow horizontally.')
+  await mkdir(path.join(frontend, 'test-results'), { recursive: true })
+  await page.screenshot({ path: path.join(frontend, 'test-results/m03-customer-mobile.png'), fullPage: true })
+  const noBusinessCsrf = await page.evaluate(async () => (await fetch('/api/v1/requests', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': 'missing-csrf-browser' }, body: JSON.stringify({ service_type: 'printing' }) })).status)
+  assert(noBusinessCsrf === 403, 'Business writes must enforce session CSRF through the HTTPS gateway.')
+  const stranger = await browser.newContext({ ignoreHTTPSErrors: true })
+  const strangerLogin = await stranger.request.post(`${origin}/api/v1/auth/telegram`, { headers: { Origin: origin }, data: { init_data: signedLaunch(223) } })
+  assert(strangerLogin.status() === 200)
+  assert((await stranger.request.get(`${origin}/api/v1/requests/${businessDraft.request.id}`)).status() === 404, 'Another Customer must not read the draft.')
+  assert((await stranger.request.get(`${origin}/api/v1/projects/${businessDraft.project.id}`)).status() === 404, 'Another Customer must not read its parent project.')
+  assert((await stranger.request.get(`${origin}/api/v1/owner/requests`)).status() === 403, 'Customer must not list Owner resources.')
+  await stranger.close()
+  console.log('PASS 2/7: production React creates and edits real simulation drafts; gateway CSRF and cross-customer isolation hold.')
 
   await page.goto(`${origin}/owner`)
   await page.getByRole('heading', { name: 'Owner access required' }).waitFor()
   const denied = await page.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)
   assert(denied === 403, 'Authenticated Customer must be denied by the actual Owner API.')
+  assert((await page.evaluate(async () => (await fetch('/api/v1/ready')).status)) === 403, 'Customer must not reach internal Owner readiness.')
   assert((await page.getByRole('group', { name: 'Preview workspace' }).count()) === 0, 'Production must not expose development role overrides.')
-  console.log('PASS 2/5: Customer is denied by both the production Owner route and the actual backend authorization check.')
+  console.log('PASS 3/7: Customer is denied by both the production Owner route and the actual backend authorization check.')
 
   await page.goto(`${origin}/app`)
   await page.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
@@ -250,8 +291,7 @@ try {
   await page.getByRole('button', { name: 'Check sign-in again' }).click()
   await page.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
   assert(customerLogins === 2, 'A fresh Telegram launch must recover after logout, using exactly one new login.')
-  console.log('PASS 3/5: HTTPS proxy Origin/CSRF enforcement, logout/revocation, no proof replay and fresh-launch recovery.')
-  await customer.close()
+  console.log('PASS 4/7: HTTPS proxy Origin/CSRF enforcement, logout/revocation, no proof replay and fresh-launch recovery.')
 
   const owner = await browser.newContext({ ignoreHTTPSErrors: true })
   await installTelegramPresentation(owner, signedLaunch(111))
@@ -260,11 +300,28 @@ try {
   await ownerPage.goto(`${origin}/owner`)
   await ownerPage.getByRole('heading', { name: 'Your workshop, at a glance.' }).waitFor()
   assert((await ownerPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 200, 'Only the configured Owner must reach the actual Owner API.')
+  assert((await ownerPage.evaluate(async () => (await fetch('/api/v1/ready')).status)) === 200, 'Packaged schema must match the application readiness head.')
+  // /docs on the HTTPS gateway is a SPA fallback, so probe the private API
+  // directly; only /api/* is forwarded by the public test gateway.
+  if (useContainerApi) assert((await fetch(`http://127.0.0.1:${apiPort}/docs`)).status === 404, 'Production container must not expose interactive API docs.')
   await ownerPage.getByRole('link', { name: 'Customer workspace', exact: true }).click()
   await ownerPage.getByRole('heading', { name: 'Your next idea, made real.' }).waitFor()
   await ownerPage.getByRole('link', { name: 'Owner workspace', exact: true }).click()
   await ownerPage.getByRole('heading', { name: 'Your workshop, at a glance.' }).waitFor()
-  console.log('PASS 4/5: trusted server-provisioned Owner signs in and navigates both production workspaces.')
+  console.log('PASS 5/7: trusted server-provisioned Owner signs in and navigates both production workspaces.')
+  await ownerPage.getByRole('button', { name: 'Load customer drafts' }).click()
+  const ownerRow = ownerPage.locator('.request-row').filter({ has: ownerPage.getByText(`${businessNotes} revised`, { exact: true }) })
+  await ownerRow.getByLabel('Cancellation reason').fill('M03 browser review complete')
+  const cancellation = ownerPage.waitForResponse(response => response.request().method() === 'POST' && response.url().endsWith(`/requests/${businessDraft.request.id}/transitions`))
+  await ownerRow.getByRole('button', { name: 'Cancel draft', exact: true }).click()
+  const cancelledResponse = await cancellation
+  assert(cancelledResponse.status() === 200 && (await cancelledResponse.json()).status === 'cancelled', 'Owner must cancel through the real authorized transition service.')
+  await ownerRow.getByText('Cancelled', { exact: true }).waitFor()
+  await ownerPage.screenshot({ path: path.join(frontend, 'test-results/m03-owner-desktop.png'), fullPage: true })
+  const customerView = await customer.request.get(`${origin}/api/v1/requests/${businessDraft.request.id}`)
+  assert(customerView.status() === 200 && (await customerView.json()).status === 'cancelled', 'Customer must see the committed Owner transition.')
+  console.log('PASS 6/7: provisioned Owner reviews and cancels the customer draft; Customer reads the committed state.')
+  await customer.close()
   await owner.close()
 
   const forged = await browser.newContext({ ignoreHTTPSErrors: true })
@@ -279,12 +336,13 @@ try {
   await forgedPage.getByRole('button', { name: 'Check sign-in again' }).click()
   await forgedPage.getByRole('heading', { name: 'Your workshop, at a glance.' }).waitFor()
   assert((await forgedPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 200, 'A fresh valid proof must recover from an earlier rejected login.')
-  console.log('PASS 5/5: forged launch rejected; fresh valid launch recovers through the real backend.')
+  console.log('PASS 7/7: forged launch rejected; fresh valid launch recovers through the real backend.')
   await forged.close()
-  console.log('M02 real-stack integration: 5 flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.')
+  console.log('M02 + M03 real-stack integration: 7 flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.')
+  if (useContainerApi) console.log('Container API mode PASS: packaged application used; caller owns container cleanup.')
 } catch (error) {
   // Assertion/selector diagnostics contain no signed proofs or credential values.
-  console.error(`M02 real-stack integration FAILED: ${error instanceof Error ? error.message : 'unknown test failure'}`)
+  console.error(`M02 + M03 real-stack integration FAILED: ${error instanceof Error ? error.message : 'unknown test failure'}`)
   process.exitCode = 1
 } finally {
   if (browser) await browser.close().catch(() => {})

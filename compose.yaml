@@ -38,7 +38,7 @@ services:
     networks: [database, edge]
     depends_on:
       db: {condition: service_healthy}
-    # Apply the reviewed auth migration explicitly before starting this service.
+    # Apply the reviewed Alembic migration chain explicitly before starting this service.
     restart: 'no'
   bot:
     image: 3dps-api:development

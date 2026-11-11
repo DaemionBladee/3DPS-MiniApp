@@ -1,3 +1,5 @@
+import { useAuth } from '../features/auth/context'
+import { RequestWorkspace } from '../features/requests/RequestWorkspace'
 import { ClipboardCheck, CreditCard, Layers3, PackageOpen, ShieldCheck, Wrench } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { Card } from '../components/ui/Card'
@@ -11,6 +13,7 @@ const modules = [
 ]
 
 export default function OwnerDashboard() {
+  const { session } = useAuth()
   return (
     <div className="dashboard">
       <section className="welcome-row" aria-labelledby="owner-title">
@@ -35,9 +38,9 @@ export default function OwnerDashboard() {
       </section>
       <Card className="owner-activity" aria-labelledby="activity-title">
         <div className="section-heading"><h2 id="activity-title">Workshop activity</h2><PackageOpen size={19} className="muted-icon" aria-hidden="true" /></div>
-        <EmptyState icon={ClipboardCheck} title="A clear starting point" description="There are no connected operational records in this preview. Future updates will reflect verified project events." />
+        {session ? <RequestWorkspace owner /> : <EmptyState icon={ClipboardCheck} title="A clear starting point" description="There are no connected operational records in this preview. Future updates will reflect verified project events." />}
       </Card>
-      <p className="owner-safety-note"><ShieldCheck size={16} aria-hidden="true" />This preview does not grant access to customer data or authorize business actions.</p>
+      <p className="owner-safety-note"><ShieldCheck size={16} aria-hidden="true" />{session ? "Customer drafts are available for review and reasoned cancellation. Live operations remain disabled." : "This preview does not grant access to customer data or authorize business actions."}</p>
     </div>
   )
 }

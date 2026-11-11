@@ -1,4 +1,4 @@
-name: Authentication foundation
+name: Backend and authentication foundation
 
 on:
   workflow_dispatch:
@@ -42,6 +42,11 @@ jobs:
         working-directory: backend
       - run: uv run --frozen pytest -q
         working-directory: backend
+      - name: Check migration metadata
+        run: uv run --frozen alembic check
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
       - run: PYTHONPATH=. uv run --frozen python scripts/export_openapi.py
         working-directory: backend
       - run: npm ci
@@ -74,3 +79,51 @@ jobs:
         working-directory: miniapp
         env:
           TEST_BROWSER_DATABASE_URL: postgresql+asyncpg://3dps_test:ci-disposable-test-only@127.0.0.1:5432/3dps_test_browser
+
+      - name: Build application container
+        run: docker build -f backend/Dockerfile -t 3dps-api:m03-ci .
+      - name: Prepare isolated container-test database
+        working-directory: backend
+        run: |
+          uv run --frozen python - <<'PY'
+          import asyncio, asyncpg, os
+          async def prepare():
+              connection = await asyncpg.connect(os.environ['TEST_DATABASE_URL'].replace('postgresql+asyncpg:', 'postgresql:', 1))
+              try:
+                  await connection.execute('CREATE DATABASE "3dps_test_browser_container"')
+              finally:
+                  await connection.close()
+          asyncio.run(prepare())
+          PY
+      - name: Migrate and start production-mode application container
+        run: |
+          cat > "$RUNNER_TEMP/m03-container.env" <<'ENV'
+          APP_ENV=production
+          DATABASE_URL=postgresql+asyncpg://3dps_test:ci-disposable-test-only@host.docker.internal:5432/3dps_test_browser_container
+          BOT_TOKEN=m02-integration-synthetic-bot-token
+          SESSION_SECRET=m03-container-synthetic-secret-never-use-outside-tests-12345
+          OWNER_TELEGRAM_IDS=111
+          PUBLIC_BASE_URL=https://127.0.0.1:18443
+          SIMULATION_MODE=true
+          DEVELOPMENT_AUTH_ENABLED=false
+          BINDING_QUOTES_ENABLED=false
+          AUTO_QUOTE_ENABLED=false
+          PAYMENT_POLICY_APPROVED=false
+          LIVE_PAYMENTS_ENABLED=false
+          REAL_PRINTING_ENABLED=false
+          AUTH_RATE_LIMIT=100
+          ENV
+          chmod 600 "$RUNNER_TEMP/m03-container.env"
+          docker run --rm --add-host=host.docker.internal:host-gateway --env-file "$RUNNER_TEMP/m03-container.env" 3dps-api:m03-ci alembic upgrade head
+          docker run --detach --name 3dps-m03-container-ci --add-host=host.docker.internal:host-gateway --publish 127.0.0.1:18002:8000 --env-file "$RUNNER_TEMP/m03-container.env" 3dps-api:m03-ci
+      - name: Real-stack checks against the application container
+        run: node scripts/test-auth-integration.mjs
+        working-directory: miniapp
+        env:
+          TEST_CONTAINER_API: 'true'
+          TEST_BROWSER_DATABASE_URL: postgresql+asyncpg://3dps_test:ci-disposable-test-only@127.0.0.1:5432/3dps_test_browser_container
+      - name: Clean up application test container
+        if: always()
+        run: |
+          docker rm --force 3dps-m03-container-ci 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/m03-container.env"

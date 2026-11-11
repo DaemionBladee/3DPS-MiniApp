@@ -1,3 +1,5 @@
+import { useAuth } from '../features/auth/context'
+import { RequestWorkspace } from '../features/requests/RequestWorkspace'
 import { ArrowRight, Box, Cuboid, Layers3, PackageOpen, PenTool, ShieldCheck, Sparkles } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -11,6 +13,7 @@ const services = [
 ]
 
 export default function CustomerDashboard() {
+  const { session } = useAuth()
   return (
     <div className="dashboard">
       <section className="welcome-row" aria-labelledby="customer-title">
@@ -22,9 +25,9 @@ export default function CustomerDashboard() {
         <div className="hero-copy">
           <span className="hero-kicker"><Sparkles size={15} aria-hidden="true" />BUILT FOR WHAT’S NEXT</span>
           <h2 id="hero-title">From possibility<br />to something real.</h2>
-          <p>Explore a simpler home for 3D printing and custom design. Your next project will begin here.</p>
-          <Button disabled aria-describedby="request-later">Start a project<ArrowRight size={17} aria-hidden="true" /></Button>
-          <span id="request-later" className="hero-note">Project requests are coming in a later release.</span>
+          <p>{session ? "Save a simulation project draft and add your ideas for printing or custom design." : "Explore a simpler home for 3D printing and custom design. Your next project will begin here."}</p>
+          <Button disabled={!session} aria-describedby="request-later" onClick={() => document.getElementById('projects-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{session ? 'View project drafts' : 'Start a project'}<ArrowRight size={17} aria-hidden="true" /></Button>
+          <span id="request-later" className="hero-note">{session ? "Save a draft below. File intake and submission open in a later release." : "Project requests are coming in a later release."}</span>
         </div>
         <div className="hero-art" aria-hidden="true">
           <div className="art-grid" />
@@ -51,7 +54,7 @@ export default function CustomerDashboard() {
       <div className="customer-bottom-grid">
         <Card className="projects-card" aria-labelledby="projects-title">
           <div className="section-heading"><h2 id="projects-title">Your projects</h2><PackageOpen size={19} className="muted-icon" aria-hidden="true" /></div>
-          <EmptyState icon={Box} title="A fresh canvas" description="Your projects will have a home here once requests are available. There are no connected project records in this preview." />
+          {session ? <RequestWorkspace /> : <EmptyState icon={Box} title="A fresh canvas" description="Your projects will have a home here once requests are available. There are no connected project records in this preview." />}
         </Card>
         <Card className="process-card" aria-labelledby="process-title">
           <p className="eyebrow">CLEAR AT EVERY STEP</p><h2 id="process-title">A considered process.</h2>

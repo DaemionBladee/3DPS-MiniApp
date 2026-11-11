@@ -1,9 +1,11 @@
 # Development, testing and deployment runbook
 
+M03 business API/migrations and Cloud test instructions are maintained in
+[BUSINESS_FOUNDATION.md](BUSINESS_FOUNDATION.md).
 M02 runnable authentication setup, Docker/Cloud tests, schema generation and
 real Telegram device steps are maintained in [AUTHENTICATION.md](AUTHENTICATION.md).
 M01 frontend commands remain in the root README. Planned broader services and
-deployment targets below are not claims that M03–M16 have been implemented.
+deployment targets below are not claims that later milestones have been implemented.
 
 ## Primary workflow: Codex Cloud website + private GitHub
 - This project is developed with **Codex on the website**, not necessarily with Codex CLI. Upload the **contents of the package** so `AGENTS.md` is at GitHub repo root, alongside `docs/` and `prompts/`; do not nest the entire instruction directory.

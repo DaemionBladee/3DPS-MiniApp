@@ -15,6 +15,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.api.auth import router
+from app.api.business import router as business_router
 from app.api.schemas import ErrorResponse
 from app.core.config import Settings
 from app.core.errors import AuthError
@@ -36,13 +37,13 @@ def error_response(status: int, code: str, message: str) -> JSONResponse:
 
 
 class AuthBodyLimitMiddleware:
-    """Bound login body buffering before JSON parsing, including chunked input."""
+    """Bound authentication and draft-command JSON buffering, including chunks."""
 
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http" or scope.get("path") != "/api/v1/auth/telegram":
+        if scope["type"] != "http" or not (scope.get("path") == "/api/v1/auth/telegram" or (scope.get("path", "").startswith("/api/v1/requests") and scope.get("method") in {"POST", "PATCH"})):
             await self.app(scope, receive, send)
             return
         chunks: list[bytes] = []
@@ -54,7 +55,7 @@ class AuthBodyLimitMiddleware:
             chunk = message.get("body", b"")
             size += len(chunk)
             if size > 32_768:
-                await error_response(413, "request_too_large", "Authentication request is too large.")(scope, receive, send)
+                await error_response(413, "request_too_large", "Request is too large.")(scope, receive, send)
                 return
             chunks.append(chunk)
             if not message.get("more_body", False):
@@ -95,14 +96,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="3DPS Mini App API",
-        version="0.2.0",
+        version="0.3.0",
         lifespan=lifespan,
         docs_url=None if settings.app_env == "production" else "/docs",
         redoc_url=None,
         responses={
             401: {"model": ErrorResponse},
             403: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
             409: {"model": ErrorResponse},
+            413: {"model": ErrorResponse},
+            503: {"model": ErrorResponse},
             422: {"model": ErrorResponse},
             429: {"model": ErrorResponse},
         },
@@ -159,4 +163,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts, www_redirect=False)
     app.add_middleware(AuthBodyLimitMiddleware)
     app.include_router(router)
+    app.include_router(business_router)
     return app

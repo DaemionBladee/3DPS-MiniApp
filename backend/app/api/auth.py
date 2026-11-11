@@ -42,9 +42,9 @@ def user_response(user: User) -> UserResponse:
 
 
 def auth_response(user: User, token: str, settings: Settings) -> AuthResponse:
-    capabilities = ["auth.read_self", "auth.logout"]
+    capabilities = ["auth.read_self", "auth.logout", "requests.read_own", "requests.create", "requests.edit_own", "requests.cancel_own"]
     if user.role == "owner":
-        capabilities.append("owner.auth_check")
+        capabilities.extend(["owner.auth_check", "requests.read_all", "requests.cancel_all"])
     return AuthResponse(user=user_response(user), capabilities=capabilities, csrf_token=csrf_token(token, settings))
 
 
@@ -53,6 +53,17 @@ async def require_session(request: Request, settings: SettingsDependency, factor
 
 
 PrincipalDependency = Annotated[Principal, Depends(require_session)]
+
+
+async def require_csrf_session(request: Request, principal: PrincipalDependency, settings: SettingsDependency) -> Principal:
+    supplied = request.headers.get("x-csrf-token", "")
+    expected = csrf_token(principal.token, settings)
+    if len(supplied) != len(expected) or not supplied.isascii() or not hmac.compare_digest(supplied, expected):
+        raise AuthError(403, "csrf_invalid", "Refresh the Mini App before trying again.")
+    return principal
+
+
+WritePrincipalDependency = Annotated[Principal, Depends(require_csrf_session)]
 
 
 @router.post("/auth/telegram", response_model=AuthResponse)

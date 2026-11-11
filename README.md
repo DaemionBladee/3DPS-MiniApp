@@ -1,13 +1,15 @@
 # 3DPS-MiniApp
 
-Telegram-first 3D printing and custom design workspace. **M02 adds secure Telegram
-authentication with FastAPI/PostgreSQL to the M01 frontend.** Customer and Owner
-dashboards remain non-operational shells: no orders, quotations, payments,
-uploads or printers are connected. Review M02 before beginning M03.
+Telegram-first 3D printing and custom design workspace. **M03 adds simulation
+project/stage drafts, transactional audit/outbox/idempotency, and generated
+React/FastAPI business contracts to M02 authentication.** Customer and Owner
+can use the initial authenticated draft APIs. Uploads, submission, quotations,
+orders, payments and printers remain unavailable. Stop after M03 for review.
 
-For real API setup, migrations, Docker/Cloud tests and Telegram device testing,
-read [the authentication runbook](docs/AUTHENTICATION.md). The frontend-only UI
-preview below still needs no bot credentials or backend.
+Read [the business foundation runbook](docs/BUSINESS_FOUNDATION.md) for M03 API,
+migration, Cloud testing and external verification instructions, and
+[the authentication runbook](docs/AUTHENTICATION.md) for HTTPS/Telegram setup.
+The frontend-only UI preview below still needs no bot credentials or backend.
 
 ## Run the frontend
 
@@ -45,8 +47,10 @@ All requests go through `miniapp/src/lib/api/client.ts` using relative
 accepts cancellation, rejects path/origin escapes and redirects, and requires
 an explicit CSRF token for authenticated mutations. Login is the narrowly
 scoped pre-session exception, protected by backend Origin/HMAC/rate checks.
-Logout enforces CSRF and revokes the server session. Auth DTOs are generated
-from actual FastAPI OpenAPI; business schemas remain deferred.
+Logout enforces CSRF and revokes the server session. Auth and initial business DTOs are generated
+from actual FastAPI OpenAPI. Authenticated dashboards expose simulation draft
+creation, versioned notes and reasoned cancellation; the Owner can review all
+customer drafts. Open/load drafts explicitly to request business records.
 
 The development-only `API_PROXY_TARGET` defaults to `http://127.0.0.1:8000`.
 For a future Compose-hosted API set it to the appropriate internal origin

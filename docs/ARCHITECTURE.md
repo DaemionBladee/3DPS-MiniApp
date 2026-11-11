@@ -1,5 +1,11 @@
 # System architecture and implementation boundaries
 
+M03's implemented slice and transaction choices are recorded in
+[ADR 0003](adr/0003-business-transaction-foundation.md) and
+[BUSINESS_FOUNDATION.md](BUSINESS_FOUNDATION.md). The broader runtime below
+remains a target: file workers, quotation/payment services and notification
+delivery are not introduced by M03.
+
 ## Target runtime (single monorepo; modular monolith)
 ```
 Telegram client / BotFather
