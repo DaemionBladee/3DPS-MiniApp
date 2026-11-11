@@ -1,0 +1,57 @@
+{
+  "name": "3dps-miniapp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24.22.1 <25",
+    "npm": ">=11.9.0 <12"
+  },
+  "packageManager": "npm@11.9.0",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "check:production": "node scripts/check-production.mjs",
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run check:production",
+    "pretest:e2e": "npm run check:production",
+    "generate:api": "npm --prefix ../tools/api-types run generate",
+    "test:auth-integration": "npm run build && node scripts/test-auth-integration.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.107.1",
+    "clsx": "2.1.1",
+    "lucide-react": "1.71.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router-dom": "7.18.5",
+    "tailwind-merge": "3.7.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.0",
+    "@tailwindcss/vite": "4.3.5",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.9",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "17.14.0",
+    "jsdom": "31.0.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2",
+    "vite": "8.3.7",
+    "vitest": "5.1.0"
+  }
+}

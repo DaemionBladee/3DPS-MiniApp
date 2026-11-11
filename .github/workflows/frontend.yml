@@ -1,0 +1,27 @@
+name: Mini App foundation
+
+on:
+  pull_request:
+  push:
+    branches: [main, DaemionBladee-dev]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniapp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: miniapp/.node-version
+          cache: npm
+          cache-dependency-path: miniapp/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

@@ -1,0 +1,24 @@
+# Local environment files can contain secrets; only the example is reviewable.
+.env
+.env.*
+!.env.example
+
+# Frontend dependencies, builds and local test artifacts.
+node_modules/
+miniapp/dist/
+miniapp/.production-check/
+miniapp/playwright-report/
+miniapp/test-results/
+miniapp/coverage/
+*.tsbuildinfo
+
+# Python environments and disposable test outputs.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.local/

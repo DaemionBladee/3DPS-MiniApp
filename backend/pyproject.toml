@@ -1,0 +1,41 @@
+[project]
+name = "3dps-backend"
+version = "0.2.0"
+description = "3DPS modular monolith: M02 authentication foundation"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic-settings",
+  "sqlalchemy[asyncio]",
+  "asyncpg",
+  "alembic",
+  "aiogram>=3,<4",
+]
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "httpx", "ruff", "mypy"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", ".."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["error"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["app"]

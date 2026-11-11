@@ -1,0 +1,12 @@
+{
+  "name": "3dps-api-type-generator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "openapi-typescript ../../backend/openapi.json -o ../../miniapp/src/lib/api/schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,54 @@
+name: 3dps-development
+services:
+  db:
+    image: postgres:16-bookworm@sha256:5264710be20f409750ac6dc4e5706dcef929c87e241605463f0f9aefa932a8d9
+    environment:
+      POSTGRES_USER: 3dps
+      POSTGRES_DB: 3dps_development
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a development database password}
+    volumes:
+      - development_db:/var/lib/postgresql/data
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U 3dps -d 3dps_development']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: 'no'
+  api:
+    image: 3dps-api:development
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment: &auth_environment
+      APP_ENV: development
+      DATABASE_URL: postgresql+asyncpg://3dps:${POSTGRES_PASSWORD:?Set a development database password}@db:5432/3dps_development
+      BOT_TOKEN: ${BOT_TOKEN:?Set a dedicated test bot token}
+      SESSION_SECRET: ${SESSION_SECRET:?Set a random development session secret}
+      OWNER_TELEGRAM_IDS: ${OWNER_TELEGRAM_IDS:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set the exact Mini App origin}
+      SIMULATION_MODE: 'true'
+      BINDING_QUOTES_ENABLED: 'false'
+      AUTO_QUOTE_ENABLED: 'false'
+      PAYMENT_POLICY_APPROVED: 'false'
+      LIVE_PAYMENTS_ENABLED: 'false'
+      REAL_PRINTING_ENABLED: 'false'
+      DEVELOPMENT_AUTH_ENABLED: 'false'
+    ports: ['127.0.0.1:8000:8000']
+    networks: [database, edge]
+    depends_on:
+      db: {condition: service_healthy}
+    # Apply the reviewed auth migration explicitly before starting this service.
+    restart: 'no'
+  bot:
+    image: 3dps-api:development
+    profiles: [bot]
+    environment: *auth_environment
+    command: [python, -m, telegram_bot]
+    networks: [edge]
+    restart: 'no'
+networks:
+  database: {internal: true}
+  edge: {}
+volumes:
+  development_db: {}

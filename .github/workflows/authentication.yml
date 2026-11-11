@@ -1,0 +1,75 @@
+name: Authentication foundation
+
+on:
+  pull_request:
+  push:
+    branches: [main, DaemionBladee-dev]
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-auth:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-bookworm@sha256:5264710be20f409750ac6dc4e5706dcef929c87e241605463f0f9aefa932a8d9
+        env:
+          POSTGRES_USER: 3dps_test
+          POSTGRES_PASSWORD: ci-disposable-test-only
+          POSTGRES_DB: 3dps_test_auth
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U 3dps_test -d 3dps_test_auth"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://3dps_test:ci-disposable-test-only@127.0.0.1:5432/3dps_test_auth
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.5'
+          python-version: '3.12.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: miniapp/.node-version
+      - run: uv sync --frozen
+        working-directory: backend
+      - run: uv run --frozen ruff check app alembic tests scripts ../telegram_bot
+        working-directory: backend
+      - run: uv run --frozen mypy app scripts ../telegram_bot
+        working-directory: backend
+      - run: uv run --frozen pytest -q
+        working-directory: backend
+      - run: PYTHONPATH=. uv run --frozen python scripts/export_openapi.py
+        working-directory: backend
+      - run: npm ci
+        working-directory: tools/api-types
+      - run: npm run generate
+        working-directory: tools/api-types
+      - run: git diff --exit-code -- backend/openapi.json miniapp/src/lib/api/schema.d.ts
+      - name: Create isolated browser-test database
+        working-directory: backend
+        run: |
+          uv run --frozen python - <<'PY'
+          import asyncio, asyncpg, os
+          async def prepare():
+              connection = await asyncpg.connect(os.environ['TEST_DATABASE_URL'].replace('postgresql+asyncpg:', 'postgresql:', 1))
+              try:
+                  await connection.execute('CREATE DATABASE "3dps_test_browser"')
+              finally:
+                  await connection.close()
+          asyncio.run(prepare())
+          PY
+      - run: uv run --frozen alembic upgrade head
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://3dps_test:ci-disposable-test-only@127.0.0.1:5432/3dps_test_browser
+      - run: npm ci
+        working-directory: miniapp
+      - run: npx playwright install --with-deps chromium
+        working-directory: miniapp
+      - run: npm run test:auth-integration
+        working-directory: miniapp
+        env:
+          TEST_BROWSER_DATABASE_URL: postgresql+asyncpg://3dps_test:ci-disposable-test-only@127.0.0.1:5432/3dps_test_browser
