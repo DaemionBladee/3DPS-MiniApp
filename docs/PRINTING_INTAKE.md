@@ -230,3 +230,15 @@ permissions accidentally. M06 must introduce isolated task execution, leases,
 retries and analysis output with exact provenance; pending must remain distinct
 from running/success. No slicing or commercial/live operations are introduced by
 this intake implementation.
+
+## M06 analysis continuation
+
+Submitted M04 tasks can now be claimed by the separately operated trusted worker.
+A pending task still does not imply running analysis. The customer details page
+polls actual authorized status and displays per-model simulation results or review
+reasons. Optional target dimensions in millimeters augment explicit unit confirmation.
+Submitted specifications remain frozen; clarification is an Owner/customer review,
+not a silent edit or model repair. The Owner processing queue exposes safe failure
+and special-requirement indicators with reasoned bounded retries. Existing derived
+M05 printing drafts retain their exact approved source-design lineage and undergo
+the same file/spec/task checks. No design-source delivery right is changed.

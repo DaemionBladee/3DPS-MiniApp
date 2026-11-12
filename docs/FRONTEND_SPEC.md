@@ -114,3 +114,13 @@ miniapp/src/
 ## F02 acceptance
 - Telegram signed raw initialization data verified in FastAPI; server session created and revoked; current user loaded; owner API rejects customer.
 - Deep links resolve to authorized pages; no secrets in frontend bundles.
+
+## Implemented M06 interfaces
+
+Submitted printing details display waiting, processing, completed, clarification,
+manual review or failure from real authenticated APIs. Current results show
+calculated/customer-confirmed dimensions, volume/topology, virtual profile/version,
+per-model grams/duration, quantity and warnings, always labeled
+“Simulation estimate — not a final quotation.” Owner processing queue and bounded
+retry review use the existing API client, sessions and generated TypeScript types.
+No quote acceptance, checkout, payment, G-code or printer control is exposed.

@@ -392,7 +392,7 @@ async def test_design_upgrade_preserves_m04_models_and_recovery_refuses_design_d
                 {"user": user, "token": "d" * 64, "proof": "e" * 64},
             )
         await engine.dispose()
-        run_migration(migration_database, "upgrade", "head")
+        run_migration(migration_database, "upgrade", "0004_design_intake")
         async with engine.begin() as db:
             assert (
                 await db.scalar(text("SELECT version_num FROM alembic_version"))
@@ -428,7 +428,7 @@ async def test_design_upgrade_preserves_m04_models_and_recovery_refuses_design_d
             assert await db.scalar(text("SELECT id FROM uploaded_files")) == file
             assert await db.scalar(text("SELECT count(*) FROM request_items")) == 1
         await engine.dispose()
-        run_migration(migration_database, "upgrade", "head")
+        run_migration(migration_database, "upgrade", "0004_design_intake")
         async with engine.begin() as db:
             service = await db.scalar(
                 text(
@@ -457,5 +457,75 @@ async def test_design_upgrade_preserves_m04_models_and_recovery_refuses_design_d
                 == "0004_design_intake"
             )
             assert await db.scalar(text("SELECT count(*) FROM design_projects")) == 1
+    finally:
+        await engine.dispose()
+
+
+async def test_analysis_upgrade_preserves_m05_data_and_guarded_recovery(
+    migration_database: str,
+) -> None:
+    run_migration(migration_database, "upgrade", "0004_design_intake")
+    engine = create_async_engine(migration_database, hide_parameters=True)
+    try:
+        async with engine.begin() as db:
+            user = await db.scalar(
+                text(
+                    "INSERT INTO users(telegram_id,display_name) VALUES(60606,'M05 seed') RETURNING id"
+                )
+            )
+            project = await db.scalar(
+                text(
+                    "INSERT INTO service_projects(customer_id,kind) VALUES(:u,'custom_design') RETURNING id"
+                ),
+                {"u": user},
+            )
+            request = await db.scalar(
+                text(
+                    "INSERT INTO service_requests(service_project_id,customer_id,service_type,stage_kind,canonical_spec_sha256) VALUES(:p,:u,'custom_design','design',repeat('a',64)) RETURNING id"
+                ),
+                {"p": project, "u": user},
+            )
+            design = await db.scalar(
+                text(
+                    "INSERT INTO design_projects(request_id,service_project_id,customer_id,brief) VALUES(:r,:p,:u,'{}'::jsonb) RETURNING id"
+                ),
+                {"r": request, "p": project, "u": user},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO sessions(user_id,token_hash,init_data_hash,expires_at) VALUES(:u,repeat('b',64),repeat('c',64),now()+interval '1 hour')"
+                ),
+                {"u": user},
+            )
+        await engine.dispose()
+        run_migration(migration_database, "upgrade", "head")
+        async with engine.begin() as db:
+            assert (
+                await db.scalar(text("SELECT version_num FROM alembic_version"))
+                == "0005_isolated_slicing"
+            )
+            assert await db.scalar(text("SELECT id FROM design_projects")) == design
+            assert await db.scalar(text("SELECT token_hash FROM sessions")) == "b" * 64
+            assert (
+                await db.scalar(text("SELECT canonical_spec_sha256 FROM service_requests"))
+                == "a" * 64
+            )
+            assert await db.scalar(text("SELECT count(*) FROM slicer_profiles")) == 0
+            assert await db.scalar(text("SELECT to_regclass('public.printers')")) is None
+        await engine.dispose()
+        run_migration(migration_database, "downgrade", "0004_design_intake")
+        run_migration(migration_database, "upgrade", "head")
+        async with engine.begin() as db:
+            await db.execute(
+                text(
+                    "INSERT INTO virtual_printer_models(key,version,label,capabilities) VALUES('virtual-seed',1,'Synthetic virtual registry','{}')"
+                )
+            )
+        await engine.dispose()
+        with pytest.raises(subprocess.CalledProcessError):
+            run_migration(migration_database, "downgrade", "0004_design_intake")
+        async with engine.begin() as db:
+            assert await db.scalar(text("SELECT count(*) FROM virtual_printer_models")) == 1
+            assert await db.scalar(text("SELECT id FROM design_projects")) == design
     finally:
         await engine.dispose()

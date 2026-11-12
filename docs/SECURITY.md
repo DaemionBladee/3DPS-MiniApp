@@ -110,3 +110,23 @@ and delivery controls below remain contracts, not implemented capabilities.
 - OWASP ASVS: https://owasp.org/www-project-application-security-verification-standard/
 - OWASP File Upload Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html
 - OWASP CSRF Prevention Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+
+## M06 execution implementation and verification limit
+
+Model geometry and native slicing execute only in the dedicated sandbox image;
+the trusted orchestrator alone accesses PostgreSQL/private storage/Docker. API
+containers do not receive Docker access. Worker input is checksum-verified and
+minimal; environment clearing prevents inherited proxy/server secrets. Runtime
+requires network-none, nonroot, read-only root/input, no capabilities,
+no-new-privileges and seccomp. Bounded tmpfs, hard POSIX budgets, timeouts and
+bounded output prevent unbounded native execution. Profiles are numeric and
+allowlisted; raw 3MF settings/hooks never reach the slicer. The backend validates
+strict output, image/executable/config/file/spec/revision provenance and current
+leases; immutable SQL triggers and atomic audit/outbox publication provide defense
+in depth. Current authorization also guards idempotency replays.
+
+Cloud verifies actual network/credential/filesystem isolation and hard process
+limits but **does not establish aggregate cgroup CPU/RAM/PID enforcement** on its
+rootless daemon. Target-host verification and a dedicated VM/microVM assessment
+remain public-worker release prerequisites. See [WORKER_OPERATIONS.md](WORKER_OPERATIONS.md).
+M02 sessions/CSRF/Owner provisioning and all disabled live gates are preserved.

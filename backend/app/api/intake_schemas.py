@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.api.business_schemas import BusinessInput, CreateRequest, RequestResponse
 
@@ -21,6 +21,18 @@ class ItemSpecification(BusinessInput):
     unit_key: UnitKey = "mm"
     unit_confirmed: bool = False
     special_requirements: str = Field(default="", max_length=2000)
+
+    dimension_x_mm: float | None = Field(default=None, gt=0, le=1000000, allow_inf_nan=False)
+    dimension_y_mm: float | None = Field(default=None, gt=0, le=1000000, allow_inf_nan=False)
+    dimension_z_mm: float | None = Field(default=None, gt=0, le=1000000, allow_inf_nan=False)
+    dimension_tolerance_mm: float = Field(default=0.5, gt=0, le=100, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def complete_dimensions(self) -> "ItemSpecification":
+        values = [self.dimension_x_mm, self.dimension_y_mm, self.dimension_z_mm]
+        if any(v is not None for v in values) and any(v is None for v in values):
+            raise ValueError("Confirm all three dimensions, or units alone")
+        return self
 
     @field_validator("description", "special_requirements")
     @classmethod
@@ -83,7 +95,11 @@ class TaskResponse(BaseModel):
     request_revision: int
     spec_sha256: str
     kind: Literal["model_analysis"]
-    state: Literal["pending", "superseded"]
+    state: Literal["pending", "leased", "succeeded", "failed", "superseded"]
+    attempts: int = 0
+    error_code: str | None = None
+    retryable: bool = False
+    started_at: datetime | None = None
 
 
 class IntakeDetail(BaseModel):
@@ -94,9 +110,9 @@ class IntakeDetail(BaseModel):
 
 
 class AnalysisStatus(BaseModel):
-    state: Literal["not_submitted", "pending", "superseded"]
+    state: Literal["not_submitted", "pending", "processing", "completed", "manual_review", "needs_clarification", "failed", "superseded"]
     tasks: list[TaskResponse]
-    processing_available: Literal[False] = False
+    processing_available: bool = False
 
 
 class CatalogOption(BaseModel):

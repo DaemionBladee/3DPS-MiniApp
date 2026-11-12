@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
@@ -51,6 +52,8 @@ class RequestItem(Base):
             "quantity BETWEEN 1 AND 1000 AND request_revision > 0", name="ck_item_spec_bounds"
         ),
         CheckConstraint("unit_key IN ('mm','cm','inch','um','ft','m')", name="ck_item_units"),
+        CheckConstraint("(dimension_x_mm IS NULL AND dimension_y_mm IS NULL AND dimension_z_mm IS NULL) OR (dimension_x_mm > 0 AND dimension_x_mm <= 1000000 AND dimension_y_mm > 0 AND dimension_y_mm <= 1000000 AND dimension_z_mm > 0 AND dimension_z_mm <= 1000000 AND dimension_x_mm IS NOT NULL AND dimension_y_mm IS NOT NULL AND dimension_z_mm IS NOT NULL)", name="ck_item_dimensions"),
+        CheckConstraint("dimension_tolerance_mm > 0 AND dimension_tolerance_mm <= 100", name="ck_item_dimension_tolerance"),
         Index("ix_request_items_request", "request_id", "active"),
     )
     id: Mapped[UUID] = mapped_column(
@@ -74,6 +77,10 @@ class RequestItem(Base):
     special_requirements: Mapped[str] = mapped_column(
         String(2000), nullable=False, server_default=""
     )
+    dimension_x_mm: Mapped[float | None] = mapped_column(Float)
+    dimension_y_mm: Mapped[float | None] = mapped_column(Float)
+    dimension_z_mm: Mapped[float | None] = mapped_column(Float)
+    dimension_tolerance_mm: Mapped[float] = mapped_column(Float, nullable=False, server_default="0.5")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -181,11 +188,18 @@ class ProcessingTask(Base):
             "kind",
             name="uq_task_revision_file_kind",
         ),
-        CheckConstraint("state IN ('pending','superseded')", name="ck_task_pending_only"),
+        CheckConstraint("state != 'succeeded' OR (result_run_id IS NOT NULL AND started_at IS NOT NULL AND completed_at IS NOT NULL)", name="ck_task_success"),
+        CheckConstraint("state != 'leased' OR result_run_id IS NULL", name="ck_task_running_result"),
+        CheckConstraint("state != 'failed' OR (error_code IS NOT NULL AND completed_at IS NOT NULL)", name="ck_task_failure"),
+        CheckConstraint("state IN ('pending','leased','succeeded','failed','superseded')", name="ck_task_state"),
+        CheckConstraint("attempts >= 0 AND max_attempts BETWEEN 3 AND 6 AND attempts <= max_attempts", name="ck_task_attempts"),
+        CheckConstraint("(state = 'leased' AND lease_token IS NOT NULL AND lease_owner IS NOT NULL AND lease_expires_at IS NOT NULL) OR (state != 'leased' AND lease_token IS NULL AND lease_owner IS NULL AND lease_expires_at IS NULL)", name="ck_task_lease"),
+        ForeignKeyConstraint(["result_run_id", "id"], ["slicing_runs.id", "slicing_runs.task_id"], name="fk_task_result", use_alter=True, ondelete="RESTRICT"),
         CheckConstraint(
             "kind = 'model_analysis' AND request_revision > 0", name="ck_task_kind_revision"
         ),
         CheckConstraint("spec_sha256 ~ '^[0-9a-f]{64}$'", name="ck_task_hash"),
+        Index("ix_task_claim", "state", "next_available_at", "created_at"),
         Index("ix_processing_tasks_request_revision", "request_id", "request_revision"),
     )
     id: Mapped[UUID] = mapped_column(
@@ -201,3 +215,16 @@ class ProcessingTask(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
+    lease_token: Mapped[UUID | None] = mapped_column(Uuid)
+    lease_owner: Mapped[str | None] = mapped_column(String(80))
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_available_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    retryable: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    selected_profile_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("slicer_profiles.id", ondelete="RESTRICT"))
+    result_run_id: Mapped[UUID | None] = mapped_column(Uuid)

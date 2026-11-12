@@ -140,3 +140,25 @@ This example is a **simulation offer**, not a payable quote. An endpoint may ins
 - Domain command commits DB state + audit + notification outbox atomically. **M03 creates the minimal transactional outbox and M08 uses it for first owner alerts; M13 adds mature retry/dead-letter handling, preferences and reporting.** Bot asynchronously pushes Telegram message and Mini App link; duplicate delivery is tolerated without duplicate business state.
 - Owners retrieve detailed cost breakdown only via owner endpoints; customers never receive internal profitability fields.
 - Implement OpenAPI-generated frontend types (`openapi-typescript` or equivalent) and contract tests for resource ownership and 400/401/403/404/409 errors.
+
+## Implemented M06 simulation analysis
+
+All endpoints use existing server sessions/ownership. Owner mutations additionally
+require CSRF, exact Origin, expected request version and `Idempotency-Key`.
+
+| Endpoint | Contract |
+|---|---|
+| `GET /api/v1/requests/{id}/analysis` | Current waiting/processing/completed/needs-clarification/manual-review/failed status; started unexpired leases alone set `processing_available` |
+| `GET /api/v1/requests/{id}/analysis/results` | Current immutable, simulation-labeled results with dimensions, per-model estimates, quantity and exact provenance |
+| `GET /api/v1/requests/{id}/items/{item}/analysis` | Same contract for an authorized current item |
+| `GET /api/v1/catalog/simulation-profiles` | Bounded authenticated approved active virtual profiles; no editor |
+| `GET /api/v1/owner/processing-tasks` | Owner-only bounded paginated queue, safe failure codes, attempts and special-requirement indicators; no lease tokens or paths |
+| `POST /api/v1/owner/processing-tasks/{id}/retry` | Reasoned bounded simulation reschedule with optional compatible profile; terminal/current work only |
+
+Print item specifications now accept all-or-none `dimension_x_mm`,
+`dimension_y_mm`, `dimension_z_mm` and `dimension_tolerance_mm` (default 0.5),
+without changing the default canonical representation of old submissions. Processing
+task states extend to pending/leased/succeeded/failed/superseded. Request status may
+be analyzing/manual_review while its submitted specification stays frozen. The API
+exports no worker shell, arbitrary config, artifact/G-code download or live feature.
+OpenAPI and TypeScript declarations are generated from actual FastAPI schemas.

@@ -25,6 +25,8 @@ beforeEach(() => {
   stored = intakeData()
   request.mockReset(); upload.mockReset(); vi.mocked(apiDownload).mockReset().mockResolvedValue(undefined)
   request.mockImplementation(async (path, options) => {
+    if (path.endsWith('/analysis/results')) return { items: [] }
+    if (path.endsWith('/analysis')) return { state: 'pending', tasks: stored.tasks, processing_available: false }
     if (path === '/catalog/printing-options') return structuredClone(catalog)
     if (options?.method === 'PATCH') {
       const body = JSON.parse(options.body as string) as { expected_version: number; specification?: ItemSpecification; customer_notes?: string; fulfillment_method?: 'pickup' | 'delivery'; fulfillment_notes?: string }
@@ -38,7 +40,7 @@ beforeEach(() => {
     if (path.endsWith('/submit')) {
       stored.request.status = 'submitted'; stored.request.submitted_revision = stored.request.revision
       stored.request.submitted_at = '2026-11-11T01:00:00Z'; stored.request.submitted_spec = {}
-      stored.tasks = [{ id: 'task-id', uploaded_file_id: FILE_ID, request_revision: stored.request.revision, spec_sha256: stored.request.canonical_spec_sha256, kind: 'model_analysis', state: 'pending' }]
+      stored.tasks = [{ id: 'task-id', uploaded_file_id: FILE_ID, request_revision: stored.request.revision, spec_sha256: stored.request.canonical_spec_sha256, kind: 'model_analysis', state: 'pending', attempts: 0, retryable: false }]
     }
     if (path.endsWith('/items') && options?.method === 'POST') stored = intakeData(false)
     return structuredClone(stored)
@@ -128,7 +130,7 @@ describe('M04 saved private printing workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: '4. Review' }))
     fireEvent.click(screen.getByRole('button', { name: 'Submit printing request' }))
     await screen.findByRole('heading', { name: 'Printing request submitted' })
-    expect(screen.getByRole('heading', { name: 'Pending analysis' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Pending analysis' })).toBeInTheDocument()
     expect(screen.getByText(/Analysis is not running yet/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /pay|quote|printer/i })).not.toBeInTheDocument()
   })
@@ -156,7 +158,7 @@ describe('M04 saved private printing workflow', () => {
     mount(true, true, <OwnerPrintingQueue />)
     fireEvent.click(screen.getByRole('button', { name: 'Load submitted printing requests' }))
     await screen.findByText('No submitted print requests')
-    expect(request).toHaveBeenCalledWith('/owner/requests?status=submitted&stage_kind=printing&limit=20&offset=0', expect.anything())
+    expect(request).toHaveBeenCalledWith('/owner/requests?stage_kind=printing&limit=20&offset=0', expect.anything())
   })
 
   it('creates a server-owned printing draft and follows its opaque ID', async () => {

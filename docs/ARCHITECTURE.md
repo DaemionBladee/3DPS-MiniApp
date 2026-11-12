@@ -116,3 +116,17 @@ Write domain change + outbox in one DB transaction, deliver Telegram alerts asyn
 - Same-origin production eliminates cross-origin cookie complexity. Vite `/api` proxy in development.
 - Local dev on CachyOS uses Docker Compose, React can run in Docker or on host; do not bind internal services to public interfaces unnecessarily.
 - Use virtual printer profile for cost simulation; physical printer asset represents an actual owned device and operational state.
+
+## Implemented M06 analysis boundary
+
+The trusted `backend/app/analysis` controller claims PostgreSQL tasks, streams a
+verified private input to an isolated temporary directory and launches the pinned
+`worker/Dockerfile` image by immutable digest. The API container has no Docker
+socket and never imports or executes geometry/slicing code. Only pure numeric
+profile definitions are shared. Each unprivileged, read-only, network-free worker
+receives model bytes and unit/dimension/profile settings, without customer text or
+credentials. It returns bounded typed JSON; publication validates provenance and
+lease fencing before atomically saving immutable analysis/run, state, audit and
+outbox records. G-code stays in ephemeral scratch. See
+[ADR 0006](adr/0006-isolated-simulation-analysis.md),
+[operations](WORKER_OPERATIONS.md) and [profiles](SLICER_PROFILES.md).

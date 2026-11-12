@@ -115,8 +115,10 @@ The [M02 final acceptance review](docs/M02_FINAL_ACCEPTANCE_REVIEW.md) records
 the recovery correction, expanded tests, migration checks and unverified hosted
 CI/device status.
 
-Real Telegram Android/iOS/Desktop launch and cookie behavior remain pending G1;
-the required external checklist is in the authentication runbook. M02's single
-Alembic revision creates authentication tables only. Live quotes/payments/physical
-printer operations remain unavailable. Stop after M02 and review before M03.
-No environment publication is part of this work.
+Current implementation extends the accepted M02–M05 history with simulation-only
+M06 model analysis and virtual slicing. See the [M06 implementation report](docs/M06_IMPLEMENTATION_REPORT.md),
+[worker runbook](docs/WORKER_OPERATIONS.md) and [profile assumptions](docs/SLICER_PROFILES.md).
+Alembic revisions 0001–0005 form one incremental history. Real Telegram device
+verification, calibrated hardware and public-worker isolation review remain
+external gates. Live quotes, payments and physical printer operations stay
+disabled. Stop after M06 for review; no environment publication is authorized.

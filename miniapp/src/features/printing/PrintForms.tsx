@@ -9,7 +9,9 @@ export function ItemEditor({ item, catalog, disabled, paused, save, markDirty, c
   const [spec, setSpec] = useState(item.specification)
   const signature = JSON.stringify(spec)
   const serverSignature = JSON.stringify(item.specification)
-  const valid = Number.isInteger(spec.quantity) && (spec.quantity ?? 0) >= 1 && (spec.quantity ?? 0) <= 1000
+  const dimensions = [spec.dimension_x_mm, spec.dimension_y_mm, spec.dimension_z_mm]
+  const dimensionsValid = dimensions.every(v => v == null) || dimensions.every(v => typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= 1000000)
+  const valid = dimensionsValid && Number.isInteger(spec.quantity) && (spec.quantity ?? 0) >= 1 && (spec.quantity ?? 0) <= 1000
   useEffect(() => {
     markDirty(item.id, signature !== serverSignature)
     if (signature === serverSignature || !valid || disabled || paused) return
@@ -35,6 +37,9 @@ export function ItemEditor({ item, catalog, disabled, paused, save, markDirty, c
       {catalog.units.map(option => <option key={option.key} value={option.key}>{option.label}</option>)}
     </select>
     <label className="print-checkbox"><input type="checkbox" checked={spec.unit_confirmed ?? false} onChange={event => change({ unit_confirmed: event.target.checked })} />I confirm these are the model’s intended units</label>
+    <p>Optional target dimensions in millimeters. Complete all three to check the calculated model scale.</p>
+    {(['x', 'y', 'z'] as const).map(axis => <div key={axis}><label htmlFor={`dimension-${axis}-${item.id}`}>Target {axis.toUpperCase()} (mm)</label><input id={`dimension-${axis}-${item.id}`} type="number" min={0.001} max={1000000} step="any" value={spec[`dimension_${axis}_mm`] ?? ''} onChange={event => change({ [`dimension_${axis}_mm`]: event.target.value === '' ? null : Number(event.target.value) })} /></div>)}
+    {!dimensionsValid && <p role="alert">Enter three positive target dimensions, or leave all three blank.</p>}
     <label htmlFor={`special-${item.id}`}>Special requirements</label><textarea id={`special-${item.id}`} maxLength={2000} value={spec.special_requirements ?? ''} onChange={event => change({ special_requirements: event.target.value })} />
     <p className="request-meta" role="status">{signature === serverSignature ? 'Settings saved' : 'Unsaved settings — autosave pending'}</p>
   </fieldset>

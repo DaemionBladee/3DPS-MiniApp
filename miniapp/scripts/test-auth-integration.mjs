@@ -1,5 +1,6 @@
 /* global window, document */
 import assert from 'node:assert/strict'
+import { runAnalysisIntegration } from './analysis-integration.mjs'
 import { runDesignIntegration } from './design-integration.mjs'
 import { spawn, spawnSync } from 'node:child_process'
 import { createHmac, randomBytes, randomUUID } from 'node:crypto'
@@ -177,6 +178,7 @@ try {
       cwd: backendDirectory,
       env: {
         ...process.env,
+        PYTHONPATH: `${backendDirectory}:${path.dirname(backendDirectory)}`,
         APP_ENV: 'test', DATABASE_URL: databaseUrl, BOT_TOKEN: syntheticBotToken,
         SESSION_SECRET: randomBytes(32).toString('base64url'), OWNER_TELEGRAM_IDS: '111',
         STORAGE_ROOT: path.join(directory, 'private-models'),
@@ -331,7 +333,9 @@ try {
   await page.getByRole('heading', { name: 'Your printing draft' }).waitFor()
   const printingId = new URL(page.url()).pathname.split('/').at(-1)
   assert(printingId, 'Printing draft must have a durable identifier.')
-  const stl = Buffer.from('solid test\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid test\n')
+  const points = [[0,0,0],[20,0,0],[20,20,0],[0,20,0],[0,0,20],[20,0,20],[20,20,20],[0,20,20]]
+  const faces = [[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],[1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]]
+  const stl = Buffer.from('solid cube\n' + faces.map(face => 'facet normal 0 0 0\nouter loop\n' + face.map(i => 'vertex ' + points[i].join(' ') + '\n').join('') + 'endloop\nendfacet\n').join('') + 'endsolid cube\n')
   const obj = Buffer.from('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n')
   await page.getByLabel('Choose model files', { exact: true }).setInputFiles([
     { name: 'triangle.stl', mimeType: 'application/octet-stream', buffer: stl },
@@ -401,6 +405,9 @@ try {
   const analysis = await (await owner.request.get(`${origin}/api/v1/requests/${printingId}/analysis`)).json()
   assert(analysis.state === 'pending' && analysis.processing_available === false, 'Pending analysis must never claim a running or completed worker.')
   console.log('PASS 10/10: Owner queue, special requirements, private download and pending-analysis inspection.')
+  if (process.env.M06_TEST_WORKER_IMAGE && !useContainerApi) {
+    await runAnalysisIntegration({ page, ownerPage, customer, owner, origin, printingId, backendDirectory, directory, databaseUrl, image: process.env.M06_TEST_WORKER_IMAGE })
+  } else console.log('M06 real worker browser flow not requested; baseline intake remains pending.')
   await runDesignIntegration({ page, ownerPage, customer, owner, origin, frontend })
   await customer.close()
   await owner.close()
@@ -419,7 +426,7 @@ try {
   assert((await forgedPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 200, 'A fresh valid proof must recover from an earlier rejected login.')
   console.log('PASS 7/10: forged launch rejected; fresh valid launch recovers through the real backend.')
   await forged.close()
-  console.log('M02–M05 real-stack integration: 14 flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.')
+  console.log(`M02–M06 real-stack integration: ${process.env.M06_TEST_WORKER_IMAGE && !useContainerApi ? 15 : 14} flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.`)
   if (useContainerApi) console.log('Container API mode PASS: packaged application used; caller owns container cleanup.')
 } catch (error) {
   // Assertion/selector diagnostics contain no signed proofs or credential values.

@@ -91,3 +91,19 @@ Supported references are PNG/JPEG/plain TXT; other document types need a reviewe
 validator/profile. Existing public-upload isolation, retention, encryption,
 backup/restore and real-device requirements remain open. The explicit test-only
 quote/paid fixture cannot satisfy future M08/M09 quote or payment guards.
+
+## M06 review additions (2026-11-12, Asia/Rangoon)
+
+- Public native-worker release remains blocked on target-host cgroup delegation
+  and measured aggregate CPU/RAM/PID enforcement, plus VM/microVM isolation review.
+  Cloud's hard POSIX/tmpfs tests do not prove those aggregate ceilings.
+- Virtual PLA/PETG profiles are approved only for simulation. Actual hardware,
+  material density/flow/speed calibration, support/manufacturability review and
+  measured throughput remain unavailable and block live pricing/production.
+- The pinned engine/image has exact runtime provenance; transitive apt packages
+  are recorded rather than snapshot-pinned. Future security/dependency updates
+  require a new tested image and profile revision, never replacement of old runs.
+- Submitted-request edits/reopen, customer clarification messaging, batch packing,
+  reliable support-material breakdown, self-intersection/strength certification
+  and calibrated costing remain outside M06. No inferred approval substitutes for
+  M07–M16 guards. Real Telegram device presentation still needs external checks.

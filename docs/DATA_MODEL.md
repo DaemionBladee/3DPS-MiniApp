@@ -154,3 +154,27 @@ erDiagram
 - `SELECT ... FOR UPDATE` for spool reservation, payment verification, quote acceptance and simultaneous job assignment; retry on serialization conflicts as needed.
 - Concurrent stock **and printer-capacity** reservations must be tested with simultaneous printing orders for the last usable grams/available time window. Derive on-hand from spool ledger movements exactly once; subtract active reservations; prevent negative availability in a single DB transaction. Include race between quote acceptance, expiring holds, checkout, provider callbacks and subsequent reservation promotion. Only physical-print stages need filament reservations.
 - No direct public record deletion for issued quotes, payment ledger, stock ledger or audit logs; use cancellation/reversal events and retention policy.
+
+## Implemented M06 additions (`0005_isolated_slicing`)
+
+- `virtual_printer_models`: versioned FDM capabilities, simulation-only and
+  uncalibrated; no physical machine entity is introduced.
+- `slicer_profiles`: immutable approved numeric configuration/checksum, material,
+  quality, virtual model, engine/executable/image provenance; activation may change.
+- `model_analyses`: immutable task-attempt/file/item/customer/request lineage,
+  input/spec checksums, revision, geometry, analyzer and review indicators.
+- `slicing_runs`: immutable analysis-attempt/profile link, exact settings snapshot,
+  engine/image hashes, nullable trustworthy estimate and sandbox evidence.
+- `processing_tasks`: bounded attempts, expiring fenced lease, next availability,
+  startup/completion/error classification and current result pointer. SQL enforces
+  lease shape, success/result relationship, provenance and immutable result history.
+- Print-item target dimension triples/tolerance are optional. Canonical hashes omit
+  these additions when no targets exist, preserving M04/M05 immutable submissions.
+- Audit actors distinguish existing user events from checked
+  `system/analysis-orchestrator` events without forging a customer identity.
+
+Only current succeeded pointers with matching request revision, specification
+hash and current validated file checksum are exposed as authoritative. An old
+profile/run remains historical after rescheduling. All existing migrations are
+preserved. Empty M06 schemas may downgrade in disposable tests; retained M06
+profiles, results, attempts, dimension confirmations or system audits block removal.

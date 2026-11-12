@@ -6,7 +6,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
 
 from app.api.auth import FactoryDependency, PrincipalDependency, SettingsDependency
 from app.api.business import BusinessPrincipalDependency, CommandKey
@@ -17,12 +16,11 @@ from app.api.intake_schemas import (
     FileMetadata,
     IntakeDetail,
     PrintingOptions,
-    TaskResponse,
     UpdateItem,
     VersionCommand,
 )
 from app.core.errors import AuthError
-from app.database.intake_models import ProcessingTask, UploadedFile
+from app.database.intake_models import UploadedFile
 from app.intake.catalog import options
 from app.intake.rate_limits import consume_rate
 from app.intake.storage import CHUNK_BYTES, PrivateStorage
@@ -259,19 +257,5 @@ async def analysis(
 ) -> AnalysisStatus:
     async with factory() as db:
         row = await authorized_request(db, principal.user, request_id)
-        tasks = (
-            await db.scalars(
-                select(ProcessingTask)
-                .where(ProcessingTask.request_id == row.id)
-                .order_by(ProcessingTask.created_at, ProcessingTask.id)
-                .limit(100)
-            )
-        ).all()
-        return AnalysisStatus(
-            state="pending"
-            if row.status == "submitted"
-            else "superseded"
-            if tasks
-            else "not_submitted",
-            tasks=[TaskResponse.model_validate(task) for task in tasks],
-        )
+        from app.services.analysis import status
+        return await status(db, row)

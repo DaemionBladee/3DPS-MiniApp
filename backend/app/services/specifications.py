@@ -20,6 +20,15 @@ def item_specification(item: RequestItem) -> ItemSpecification:
     )
 
 
+def canonical_item(item: RequestItem) -> dict[str, Any]:
+    value = item_specification(item).model_dump()
+    # Preserve every pre-M06 canonical hash and immutable submitted snapshot.
+    if value["dimension_x_mm"] is None:
+        for key in ["dimension_x_mm", "dimension_y_mm", "dimension_z_mm", "dimension_tolerance_mm"]:
+            value.pop(key)
+    return value
+
+
 async def canonical_spec(database: AsyncSession, row: ServiceRequest) -> dict[str, Any]:
     items = (
         await database.scalars(
@@ -34,7 +43,7 @@ async def canonical_spec(database: AsyncSession, row: ServiceRequest) -> dict[st
         values.append(
             {
                 "item_id": str(item.id),
-                "specification": item_specification(item).model_dump(),
+                "specification": canonical_item(item),
                 "file": {
                     "id": str(file.id),
                     "sha256": file.sha256,
@@ -107,10 +116,10 @@ async def refresh_spec(
         update(ProcessingTask)
         .where(
             ProcessingTask.request_id == row.id,
-            ProcessingTask.state == "pending",
+            ProcessingTask.state.in_(["pending", "leased", "succeeded", "failed"]),
             ProcessingTask.request_revision != row.revision,
         )
-        .values(state="superseded")
+        .values(state="superseded", lease_token=None, lease_owner=None, lease_expires_at=None)
     )
 
 

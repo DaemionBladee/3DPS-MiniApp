@@ -20,7 +20,7 @@ function DraftRow({ row, canEdit, busy, run }: { row: Request; canEdit: boolean;
   const [notes, setNotes] = useState(row.customer_notes)
   const [reason, setReason] = useState('')
   return <li className="request-row">
-    <div className="section-heading"><h3>{serviceLabels[row.service_type]}</h3><Badge>{{ draft: 'Draft', submitted: row.stage_kind === 'printing' ? 'Submitted — pending analysis' : 'Submitted design brief', cancelled: 'Cancelled' }[row.status]}</Badge></div>
+    <div className="section-heading"><h3>{serviceLabels[row.service_type]}</h3><Badge>{{ draft: 'Draft', submitted: row.stage_kind === 'printing' ? 'Submitted — pending analysis' : 'Submitted design brief', analyzing: 'Analyzing', manual_review: 'Manual review', cancelled: 'Cancelled' }[row.status]}</Badge></div>
     <p className="request-meta">{row.stage_kind === 'design' ? 'Design stage' : 'Printing stage'} · Revision {row.revision} · Simulation</p>
     {canEdit && row.status === 'draft' ? <form onSubmit={event => { event.preventDefault(); run({ path: `/requests/${row.id}`, method: 'PATCH', body: { expected_version: row.version, customer_notes: notes } }) }}>
       <label htmlFor={`notes-${row.id}`}>Draft notes</label><textarea id={`notes-${row.id}`} maxLength={2000} value={notes} onChange={event => setNotes(event.target.value)} disabled={busy} />

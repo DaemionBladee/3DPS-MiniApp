@@ -1,10 +1,147 @@
 {
   "components": {
     "schemas": {
+      "AnalysisResult": {
+        "properties": {
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Estimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "executable_sha256": {
+            "title": "Executable Sha256",
+            "type": "string"
+          },
+          "geometry": {
+            "$ref": "#/components/schemas/Geometry"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_sha256": {
+            "title": "Input Sha256",
+            "type": "string"
+          },
+          "notice": {
+            "const": "Simulation estimate \u2014 not a final quotation.",
+            "default": "Simulation estimate \u2014 not a final quotation.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "estimated",
+              "manual_review"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/SimulationProfile"
+          },
+          "profile_snapshot": {
+            "additionalProperties": true,
+            "title": "Profile Snapshot",
+            "type": "object"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "request_item_id": {
+            "format": "uuid",
+            "title": "Request Item Id",
+            "type": "string"
+          },
+          "request_revision": {
+            "title": "Request Revision",
+            "type": "integer"
+          },
+          "simulation_only": {
+            "const": true,
+            "default": true,
+            "title": "Simulation Only",
+            "type": "boolean"
+          },
+          "spec_sha256": {
+            "title": "Spec Sha256",
+            "type": "string"
+          },
+          "special_requirements": {
+            "title": "Special Requirements",
+            "type": "boolean"
+          },
+          "submitted_specification": {
+            "$ref": "#/components/schemas/ItemSpecification"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "uploaded_file_id": {
+            "format": "uuid",
+            "title": "Uploaded File Id",
+            "type": "string"
+          },
+          "worker_image": {
+            "title": "Worker Image",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "task_id",
+          "request_item_id",
+          "uploaded_file_id",
+          "request_revision",
+          "spec_sha256",
+          "input_sha256",
+          "outcome",
+          "geometry",
+          "estimate",
+          "profile",
+          "profile_snapshot",
+          "engine_version",
+          "executable_sha256",
+          "worker_image",
+          "quantity",
+          "submitted_specification",
+          "special_requirements"
+        ],
+        "title": "AnalysisResult",
+        "type": "object"
+      },
+      "AnalysisResults": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisResult"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AnalysisResults",
+        "type": "object"
+      },
       "AnalysisStatus": {
         "properties": {
           "processing_available": {
-            "const": false,
             "default": false,
             "title": "Processing Available",
             "type": "boolean"
@@ -13,6 +150,11 @@
             "enum": [
               "not_submitted",
               "pending",
+              "processing",
+              "completed",
+              "manual_review",
+              "needs_clarification",
+              "failed",
               "superseded"
             ],
             "title": "State",
@@ -567,6 +709,36 @@
         "title": "DesignVersionResponse",
         "type": "object"
       },
+      "Dimensions": {
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Y",
+            "type": "number"
+          },
+          "z": {
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Z",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "title": "Dimensions",
+        "type": "object"
+      },
       "DraftPatch": {
         "additionalProperties": false,
         "properties": {
@@ -643,6 +815,58 @@
           "correlation_id"
         ],
         "title": "ErrorResponse",
+        "type": "object"
+      },
+      "Estimate": {
+        "additionalProperties": false,
+        "properties": {
+          "canonical_gcode_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Canonical Gcode Sha256",
+            "type": "string"
+          },
+          "filament_g": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000000.0,
+            "title": "Filament G",
+            "type": "number"
+          },
+          "gcode_bytes": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 67108864.0,
+            "title": "Gcode Bytes",
+            "type": "integer"
+          },
+          "gcode_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Gcode Sha256",
+            "type": "string"
+          },
+          "print_seconds": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 31536000.0,
+            "title": "Print Seconds",
+            "type": "integer"
+          },
+          "support_estimate_available": {
+            "const": false,
+            "default": false,
+            "title": "Support Estimate Available",
+            "type": "boolean"
+          },
+          "support_g": {
+            "title": "Support G",
+            "type": "null"
+          }
+        },
+        "required": [
+          "filament_g",
+          "print_seconds",
+          "gcode_sha256",
+          "canonical_gcode_sha256",
+          "gcode_bytes"
+        ],
+        "title": "Estimate",
         "type": "object"
       },
       "FileMetadata": {
@@ -773,6 +997,152 @@
         "title": "FileMetadata",
         "type": "object"
       },
+      "Geometry": {
+        "additionalProperties": false,
+        "properties": {
+          "boundary_edges": {
+            "maximum": 300000.0,
+            "minimum": 0.0,
+            "title": "Boundary Edges",
+            "type": "integer"
+          },
+          "build_volume_compatible": {
+            "title": "Build Volume Compatible",
+            "type": "boolean"
+          },
+          "component_count": {
+            "maximum": 300000.0,
+            "minimum": 1.0,
+            "title": "Component Count",
+            "type": "integer"
+          },
+          "declared_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Unit"
+          },
+          "degenerate_faces": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Degenerate Faces",
+            "type": "integer"
+          },
+          "dimensions_mm": {
+            "$ref": "#/components/schemas/Dimensions"
+          },
+          "duplicate_faces": {
+            "maximum": 100000.0,
+            "minimum": 0.0,
+            "title": "Duplicate Faces",
+            "type": "integer"
+          },
+          "format": {
+            "enum": [
+              "stl",
+              "obj",
+              "3mf"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "nonmanifold_edges": {
+            "maximum": 300000.0,
+            "minimum": 0.0,
+            "title": "Nonmanifold Edges",
+            "type": "integer"
+          },
+          "object_count": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Object Count",
+            "type": "integer"
+          },
+          "review_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30,
+            "title": "Review Reasons",
+            "type": "array"
+          },
+          "triangle_count": {
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Triangle Count",
+            "type": "integer"
+          },
+          "unit_key": {
+            "enum": [
+              "mm",
+              "cm",
+              "inch",
+              "um",
+              "ft",
+              "m"
+            ],
+            "title": "Unit Key",
+            "type": "string"
+          },
+          "volume_mm3": {
+            "anyOf": [
+              {
+                "maximum": 1e+18,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume Mm3"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30,
+            "title": "Warnings",
+            "type": "array"
+          },
+          "watertight": {
+            "title": "Watertight",
+            "type": "boolean"
+          },
+          "winding_errors": {
+            "maximum": 300000.0,
+            "minimum": 0.0,
+            "title": "Winding Errors",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "format",
+          "unit_key",
+          "declared_unit",
+          "dimensions_mm",
+          "volume_mm3",
+          "object_count",
+          "component_count",
+          "triangle_count",
+          "watertight",
+          "boundary_edges",
+          "nonmanifold_edges",
+          "degenerate_faces",
+          "duplicate_faces",
+          "winding_errors",
+          "build_volume_compatible",
+          "warnings",
+          "review_reasons"
+        ],
+        "title": "Geometry",
+        "type": "object"
+      },
       "IntakeDetail": {
         "properties": {
           "customer_display_name": {
@@ -894,6 +1264,8 @@
             "enum": [
               "draft",
               "submitted",
+              "analyzing",
+              "manual_review",
               "cancelled"
             ],
             "title": "Status",
@@ -1038,6 +1410,52 @@
             "title": "Description",
             "type": "string"
           },
+          "dimension_tolerance_mm": {
+            "default": 0.5,
+            "exclusiveMinimum": 0.0,
+            "maximum": 100.0,
+            "title": "Dimension Tolerance Mm",
+            "type": "number"
+          },
+          "dimension_x_mm": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1000000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension X Mm"
+          },
+          "dimension_y_mm": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1000000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension Y Mm"
+          },
+          "dimension_z_mm": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1000000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimension Z Mm"
+          },
           "material_key": {
             "anyOf": [
               {
@@ -1129,6 +1547,141 @@
           "color_keys"
         ],
         "title": "MaterialOption",
+        "type": "object"
+      },
+      "OwnerTask": {
+        "properties": {
+          "attempts": {
+            "default": 0,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "customer_id": {
+            "format": "uuid",
+            "title": "Customer Id",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "model_analysis",
+            "title": "Kind",
+            "type": "string"
+          },
+          "max_attempts": {
+            "title": "Max Attempts",
+            "type": "integer"
+          },
+          "next_available_at": {
+            "format": "date-time",
+            "title": "Next Available At",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "request_revision": {
+            "title": "Request Revision",
+            "type": "integer"
+          },
+          "retryable": {
+            "default": false,
+            "title": "Retryable",
+            "type": "boolean"
+          },
+          "selected_profile_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Profile Id"
+          },
+          "spec_sha256": {
+            "title": "Spec Sha256",
+            "type": "string"
+          },
+          "special_requirements": {
+            "title": "Special Requirements",
+            "type": "boolean"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "state": {
+            "enum": [
+              "pending",
+              "leased",
+              "succeeded",
+              "failed",
+              "superseded"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "uploaded_file_id": {
+            "format": "uuid",
+            "title": "Uploaded File Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "uploaded_file_id",
+          "request_revision",
+          "spec_sha256",
+          "kind",
+          "state",
+          "request_id",
+          "customer_id",
+          "selected_profile_id",
+          "max_attempts",
+          "next_available_at",
+          "completed_at",
+          "special_requirements"
+        ],
+        "title": "OwnerTask",
         "type": "object"
       },
       "PrintingOptions": {
@@ -1450,6 +2003,8 @@
             "enum": [
               "draft",
               "submitted",
+              "analyzing",
+              "manual_review",
               "cancelled"
             ],
             "title": "Status",
@@ -1512,6 +2067,71 @@
           "reason"
         ],
         "title": "RequestTransition",
+        "type": "object"
+      },
+      "RetryResponse": {
+        "properties": {
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "state": {
+            "const": "pending",
+            "default": "pending",
+            "title": "State",
+            "type": "string"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "request_id",
+          "task_id",
+          "version"
+        ],
+        "title": "RetryResponse",
+        "type": "object"
+      },
+      "RetryTask": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 8,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "reason"
+        ],
+        "title": "RetryTask",
         "type": "object"
       },
       "ReviewProof": {
@@ -1659,6 +2279,97 @@
         "title": "SimulationFixture",
         "type": "object"
       },
+      "SimulationProfile": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "approval_status": {
+            "const": "approved",
+            "title": "Approval Status",
+            "type": "string"
+          },
+          "calibrated": {
+            "const": false,
+            "title": "Calibrated",
+            "type": "boolean"
+          },
+          "config_sha256": {
+            "title": "Config Sha256",
+            "type": "string"
+          },
+          "configuration": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "title": "Configuration",
+            "type": "object"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "material_key": {
+            "title": "Material Key",
+            "type": "string"
+          },
+          "quality_key": {
+            "title": "Quality Key",
+            "type": "string"
+          },
+          "simulation_only": {
+            "const": true,
+            "title": "Simulation Only",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "virtual_printer_model_id": {
+            "format": "uuid",
+            "title": "Virtual Printer Model Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "version",
+          "virtual_printer_model_id",
+          "material_key",
+          "quality_key",
+          "configuration",
+          "config_sha256",
+          "engine_version",
+          "approval_status",
+          "active",
+          "calibrated",
+          "simulation_only"
+        ],
+        "title": "SimulationProfile",
+        "type": "object"
+      },
       "StatusResponse": {
         "properties": {
           "status": {
@@ -1671,8 +2382,52 @@
         "title": "StatusResponse",
         "type": "object"
       },
+      "TaskPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OwnerTask"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          }
+        },
+        "required": [
+          "items",
+          "next_offset"
+        ],
+        "title": "TaskPage",
+        "type": "object"
+      },
       "TaskResponse": {
         "properties": {
+          "attempts": {
+            "default": 0,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -1687,13 +2442,33 @@
             "title": "Request Revision",
             "type": "integer"
           },
+          "retryable": {
+            "default": false,
+            "title": "Retryable",
+            "type": "boolean"
+          },
           "spec_sha256": {
             "title": "Spec Sha256",
             "type": "string"
           },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
           "state": {
             "enum": [
               "pending",
+              "leased",
+              "succeeded",
+              "failed",
               "superseded"
             ],
             "title": "State",
@@ -1802,7 +2577,7 @@
   },
   "info": {
     "title": "3DPS Mini App API",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -2469,6 +3244,121 @@
         "summary": "Catalog",
         "tags": [
           "printing-intake"
+        ]
+      }
+    },
+    "/api/v1/catalog/simulation-profiles": {
+      "get": {
+        "operationId": "profiles_api_v1_catalog_simulation_profiles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SimulationProfile"
+                  },
+                  "title": "Response Profiles Api V1 Catalog Simulation Profiles Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Profiles",
+        "tags": [
+          "simulation-analysis"
         ]
       }
     },
@@ -4637,6 +5527,288 @@
         ]
       }
     },
+    "/api/v1/owner/processing-tasks": {
+      "get": {
+        "operationId": "queue_api_v1_owner_processing_tasks_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 10000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Queue",
+        "tags": [
+          "simulation-analysis"
+        ]
+      }
+    },
+    "/api/v1/owner/processing-tasks/{task_id}/retry": {
+      "post": {
+        "operationId": "reschedule_api_v1_owner_processing_tasks__task_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Task Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryTask"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Reschedule",
+        "tags": [
+          "simulation-analysis"
+        ]
+      }
+    },
     "/api/v1/owner/requests": {
       "get": {
         "operationId": "owner_requests_api_v1_owner_requests_get",
@@ -4675,6 +5847,8 @@
                   "enum": [
                     "draft",
                     "submitted",
+                    "analyzing",
+                    "manual_review",
                     "cancelled"
                   ],
                   "type": "string"
@@ -5842,6 +7016,129 @@
         "summary": "Analysis",
         "tags": [
           "printing-intake"
+        ]
+      }
+    },
+    "/api/v1/requests/{request_id}/analysis/results": {
+      "get": {
+        "operationId": "request_results_api_v1_requests__request_id__analysis_results_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResults"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Request Results",
+        "tags": [
+          "simulation-analysis"
         ]
       }
     },
@@ -7225,6 +8522,139 @@
         "summary": "Patch Item",
         "tags": [
           "printing-intake"
+        ]
+      }
+    },
+    "/api/v1/requests/{request_id}/items/{item_id}/analysis": {
+      "get": {
+        "operationId": "item_results_api_v1_requests__request_id__items__item_id__analysis_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResults"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Item Results",
+        "tags": [
+          "simulation-analysis"
         ]
       }
     },

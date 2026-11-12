@@ -1,4 +1,4 @@
-name: Backend, authentication, printing and design intake
+name: Backend, authentication, intake and isolated analysis
 
 on:
   workflow_dispatch:
@@ -36,9 +36,13 @@ jobs:
           node-version-file: miniapp/.node-version
       - run: uv sync --frozen
         working-directory: backend
-      - run: uv run --frozen ruff check app alembic tests scripts ../telegram_bot
+      - name: Build pinned isolated slicer for real security and geometry tests
+        run: |
+          docker build -f worker/Dockerfile -t 3dps-slicer:m06-ci .
+          echo "M06_TEST_WORKER_IMAGE=$(docker image inspect --format '{{.Id}}' 3dps-slicer:m06-ci)" >> "$GITHUB_ENV"
+      - run: uv run --frozen ruff check app alembic tests scripts ../telegram_bot ../worker
         working-directory: backend
-      - run: uv run --frozen mypy app scripts ../telegram_bot
+      - run: uv run --frozen mypy app scripts ../telegram_bot ../worker
         working-directory: backend
       - run: uv run --frozen pytest -q
         working-directory: backend
@@ -47,7 +51,7 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
-      - run: PYTHONPATH=. uv run --frozen python scripts/export_openapi.py
+      - run: PYTHONPATH=.:.. uv run --frozen python scripts/export_openapi.py
         working-directory: backend
       - run: npm ci
         working-directory: tools/api-types
@@ -81,7 +85,7 @@ jobs:
           TEST_BROWSER_DATABASE_URL: postgresql+asyncpg://3dps_test:ci-disposable-test-only@127.0.0.1:5432/3dps_test_browser
 
       - name: Build application container
-        run: docker build -f backend/Dockerfile -t 3dps-api:m05-ci .
+        run: docker build -f backend/Dockerfile -t 3dps-api:m06-ci .
       - name: Prepare isolated container-test database
         working-directory: backend
         run: |
@@ -114,9 +118,9 @@ jobs:
           AUTH_RATE_LIMIT=100
           ENV
           chmod 600 "$RUNNER_TEMP/m05-container.env"
-          docker run --rm --add-host=host.docker.internal:host-gateway --env-file "$RUNNER_TEMP/m05-container.env" 3dps-api:m05-ci alembic upgrade head
+          docker run --rm --add-host=host.docker.internal:host-gateway --env-file "$RUNNER_TEMP/m05-container.env" 3dps-api:m06-ci alembic upgrade head
           docker volume create 3dps-m05-private-ci
-          docker run --detach --volume 3dps-m05-private-ci:/srv/private_uploads --name 3dps-m05-container-ci --add-host=host.docker.internal:host-gateway --publish 127.0.0.1:18002:8000 --env-file "$RUNNER_TEMP/m05-container.env" 3dps-api:m05-ci
+          docker run --detach --volume 3dps-m05-private-ci:/srv/private_uploads --name 3dps-m05-container-ci --add-host=host.docker.internal:host-gateway --publish 127.0.0.1:18002:8000 --env-file "$RUNNER_TEMP/m05-container.env" 3dps-api:m06-ci
       - name: Real-stack checks against the application container
         run: node scripts/test-auth-integration.mjs
         working-directory: miniapp

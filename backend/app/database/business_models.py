@@ -73,7 +73,7 @@ class ServiceRequest(Base):
         UniqueConstraint("id", "customer_id", name="uq_request_customer"),
         ForeignKeyConstraint(["source_design_version_id", "service_project_id", "customer_id"], ["design_versions.id", "design_versions.service_project_id", "design_versions.customer_id"], name="fk_print_source_design", use_alter=True, ondelete="RESTRICT"),
         UniqueConstraint("source_design_version_id", name="uq_print_source_design"),
-        CheckConstraint("status IN ('draft','submitted','cancelled')", name="ck_request_status"),
+        CheckConstraint("status IN ('draft','submitted','analyzing','manual_review','cancelled')", name="ck_request_status"),
         UniqueConstraint("id", "customer_id", "stage_kind", name="uq_request_owner_stage"),
         CheckConstraint("mode = 'simulation'", name="ck_request_mode"),
         CheckConstraint(
@@ -81,7 +81,7 @@ class ServiceRequest(Base):
         ),
         CheckConstraint("spec_schema_version IN (1,2,3)", name="ck_request_spec_schema"),
         CheckConstraint(
-            "(submitted_spec IS NULL AND submitted_at IS NULL AND submitted_revision IS NULL AND status != 'submitted') OR (submitted_spec IS NOT NULL AND submitted_at IS NOT NULL AND submitted_revision IS NOT NULL AND submitted_revision = revision AND status IN ('submitted','cancelled'))",
+            "(submitted_spec IS NULL AND submitted_at IS NULL AND submitted_revision IS NULL AND status NOT IN ('submitted','analyzing','manual_review')) OR (submitted_spec IS NOT NULL AND submitted_at IS NOT NULL AND submitted_revision IS NOT NULL AND submitted_revision = revision AND status IN ('submitted','analyzing','manual_review','cancelled'))",
             name="ck_request_submission_snapshot",
         ),
         CheckConstraint("version > 0 AND revision > 0", name="ck_request_versions"),
@@ -125,11 +125,14 @@ class ServiceRequest(Base):
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
+    __table_args__ = (CheckConstraint("(actor_kind='user' AND actor_user_id IS NOT NULL AND system_actor IS NULL) OR (actor_kind='system' AND actor_user_id IS NULL AND system_actor='analysis-orchestrator')", name="ck_audit_actor"),)
+    actor_kind: Mapped[str] = mapped_column(String(16), nullable=False, server_default="user")
+    system_actor: Mapped[str | None] = mapped_column(String(64))
     id: Mapped[UUID] = mapped_column(
         Uuid, primary_key=True, server_default=text("gen_random_uuid()")
     )
-    actor_user_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
+    actor_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="RESTRICT"), nullable=True, index=True
     )
     action: Mapped[str] = mapped_column(String(80), nullable=False)
     entity_id: Mapped[UUID] = mapped_column(

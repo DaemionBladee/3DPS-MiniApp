@@ -315,3 +315,6 @@ h1 { font-size: clamp(24px, 2.5vw, 34px); letter-spacing: -1.2px; line-height: 1
 .design-proof-text { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--app-bg); padding: 16px; border-radius: 8px; font-size: 14px; }
 .design-proof-viewer { margin-block: 16px; }
 .design-page .print-checkbox { display: flex; align-items: center; gap: 12px; min-height: 44px; margin-block: 16px; }
+
+.analysis-checksum { overflow-wrap: anywhere; font-size: .8rem; }
+.analysis-panel details { margin-block: 1rem; }
