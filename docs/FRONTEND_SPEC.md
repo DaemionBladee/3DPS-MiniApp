@@ -124,3 +124,7 @@ per-model grams/duration, quantity and warnings, always labeled
 “Simulation estimate — not a final quotation.” Owner processing queue and bounded
 retry review use the existing API client, sessions and generated TypeScript types.
 No quote acceptance, checkout, payment, G-code or printer control is exposed.
+
+## M07 implementation boundary
+
+Implemented M07 detail panels show backend-calculated test estimates, independent MMK/XTR stages, review/missing-input states and Owner-only cost/provenance details. The Owner dashboard has explicit versioned simulation configuration. React does not compute authoritative prices or persist sensitive pricing data in localStorage.

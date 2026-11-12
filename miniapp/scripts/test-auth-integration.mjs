@@ -1,5 +1,6 @@
 /* global window, document */
 import assert from 'node:assert/strict'
+import { runPricingIntegration } from './pricing-integration.mjs'
 import { runAnalysisIntegration } from './analysis-integration.mjs'
 import { runDesignIntegration } from './design-integration.mjs'
 import { spawn, spawnSync } from 'node:child_process'
@@ -409,6 +410,7 @@ try {
     await runAnalysisIntegration({ page, ownerPage, customer, owner, origin, printingId, backendDirectory, directory, databaseUrl, image: process.env.M06_TEST_WORKER_IMAGE })
   } else console.log('M06 real worker browser flow not requested; baseline intake remains pending.')
   await runDesignIntegration({ page, ownerPage, customer, owner, origin, frontend })
+  await runPricingIntegration({ page, ownerPage, customer, owner, origin, printingId })
   await customer.close()
   await owner.close()
 
@@ -426,7 +428,7 @@ try {
   assert((await forgedPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 200, 'A fresh valid proof must recover from an earlier rejected login.')
   console.log('PASS 7/10: forged launch rejected; fresh valid launch recovers through the real backend.')
   await forged.close()
-  console.log(`M02–M06 real-stack integration: ${process.env.M06_TEST_WORKER_IMAGE && !useContainerApi ? 15 : 14} flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.`)
+  console.log(`M02–M07 real-stack integration: ${process.env.M06_TEST_WORKER_IMAGE && !useContainerApi ? 17 : 16} flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.`)
   if (useContainerApi) console.log('Container API mode PASS: packaged application used; caller owns container cleanup.')
 } catch (error) {
   // Assertion/selector diagnostics contain no signed proofs or credential values.

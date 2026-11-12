@@ -206,6 +206,133 @@
         "title": "AuthResponse",
         "type": "object"
       },
+      "AvailabilityDefinition-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "capacity": {
+            "items": {
+              "$ref": "#/components/schemas/CapacityFixture"
+            },
+            "maxItems": 50,
+            "title": "Capacity",
+            "type": "array"
+          },
+          "simulation_only": {
+            "const": true,
+            "default": true,
+            "title": "Simulation Only",
+            "type": "boolean"
+          },
+          "stock": {
+            "items": {
+              "$ref": "#/components/schemas/StockFixture-Input"
+            },
+            "maxItems": 4,
+            "title": "Stock",
+            "type": "array"
+          },
+          "ttl_seconds": {
+            "maximum": 86400.0,
+            "minimum": 60.0,
+            "title": "Ttl Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ttl_seconds"
+        ],
+        "title": "AvailabilityDefinition",
+        "type": "object"
+      },
+      "AvailabilityDefinition-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "capacity": {
+            "items": {
+              "$ref": "#/components/schemas/CapacityFixture"
+            },
+            "maxItems": 50,
+            "title": "Capacity",
+            "type": "array"
+          },
+          "simulation_only": {
+            "const": true,
+            "default": true,
+            "title": "Simulation Only",
+            "type": "boolean"
+          },
+          "stock": {
+            "items": {
+              "$ref": "#/components/schemas/StockFixture-Output"
+            },
+            "maxItems": 4,
+            "title": "Stock",
+            "type": "array"
+          },
+          "ttl_seconds": {
+            "maximum": 86400.0,
+            "minimum": 60.0,
+            "title": "Ttl Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ttl_seconds"
+        ],
+        "title": "AvailabilityDefinition",
+        "type": "object"
+      },
+      "AvailabilityResponse": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/AvailabilityDefinition-Output"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "mode",
+          "configuration",
+          "checksum",
+          "active",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "AvailabilityResponse",
+        "type": "object"
+      },
       "BriefCommand": {
         "additionalProperties": false,
         "properties": {
@@ -223,6 +350,34 @@
           "brief"
         ],
         "title": "BriefCommand",
+        "type": "object"
+      },
+      "CapacityFixture": {
+        "additionalProperties": false,
+        "properties": {
+          "available_seconds": {
+            "anyOf": [
+              {
+                "maximum": 31536000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Seconds"
+          },
+          "profile_id": {
+            "pattern": "^[0-9a-f-]{36}$",
+            "title": "Profile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_id"
+        ],
+        "title": "CapacityFixture",
         "type": "object"
       },
       "CatalogOption": {
@@ -318,6 +473,176 @@
           "csrf_token"
         ],
         "title": "CsrfResponse",
+        "type": "object"
+      },
+      "CustomerEstimate": {
+        "properties": {
+          "acceptable": {
+            "const": false,
+            "default": false,
+            "title": "Acceptable",
+            "type": "boolean"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "binding_authorized": {
+            "const": false,
+            "default": false,
+            "title": "Binding Authorized",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency_code": {
+            "enum": [
+              "MMK",
+              "XTR"
+            ],
+            "title": "Currency Code",
+            "type": "string"
+          },
+          "current": {
+            "title": "Current",
+            "type": "boolean"
+          },
+          "decision": {
+            "enum": [
+              "pass",
+              "review",
+              "error"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "estimated_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Total"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "test_estimate",
+            "default": "test_estimate",
+            "title": "Kind",
+            "type": "string"
+          },
+          "mode": {
+            "const": "simulation",
+            "default": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "notice": {
+            "default": "NON-BINDING TEST ESTIMATE \u2014 hypothetical simulation costs, not a final quotation.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "integer"
+          },
+          "priced": {
+            "title": "Priced",
+            "type": "boolean"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "request_revision": {
+            "title": "Request Revision",
+            "type": "integer"
+          },
+          "review_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Review Reasons",
+            "type": "array"
+          },
+          "stage_kind": {
+            "enum": [
+              "printing",
+              "design"
+            ],
+            "title": "Stage Kind",
+            "type": "string"
+          },
+          "stale_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stale Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "request_id",
+          "number",
+          "stage_kind",
+          "currency_code",
+          "current",
+          "priced",
+          "estimated_total",
+          "policy_version",
+          "request_revision",
+          "decision",
+          "review_reasons",
+          "stale_reasons",
+          "assumptions",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "CustomerEstimate",
+        "type": "object"
+      },
+      "CustomerPricingView": {
+        "properties": {
+          "estimate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "estimate"
+        ],
+        "title": "CustomerPricingView",
         "type": "object"
       },
       "DesignBrief": {
@@ -575,6 +900,55 @@
         "title": "DesignPage",
         "type": "object"
       },
+      "DesignPricingBasis": {
+        "additionalProperties": false,
+        "properties": {
+          "complexity": {
+            "enum": [
+              "simple",
+              "standard",
+              "complex"
+            ],
+            "title": "Complexity",
+            "type": "string"
+          },
+          "estimated_hours": {
+            "ge": 0,
+            "le": "1000000000000000",
+            "title": "Estimated Hours",
+            "type": "string"
+          },
+          "hours_per_revision": {
+            "ge": 0,
+            "le": "1000000000000000",
+            "title": "Hours Per Revision",
+            "type": "string"
+          },
+          "scope_id": {
+            "format": "uuid",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "usage_rights": {
+            "enum": [
+              "personal",
+              "commercial",
+              "exclusive"
+            ],
+            "title": "Usage Rights",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope_id",
+          "estimated_hours",
+          "hours_per_revision",
+          "complexity",
+          "usage_rights"
+        ],
+        "title": "DesignPricingBasis",
+        "type": "object"
+      },
       "DesignReviewResponse": {
         "properties": {
           "decision": {
@@ -787,6 +1161,270 @@
         "title": "DraftPatch",
         "type": "object"
       },
+      "EligibilityPolicy-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_materials": {
+            "items": {
+              "enum": [
+                "dev-pla",
+                "dev-petg"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Approved Materials",
+            "type": "array"
+          },
+          "approved_profile_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Approved Profile Ids",
+            "type": "array"
+          },
+          "approved_qualities": {
+            "items": {
+              "enum": [
+                "dev-standard",
+                "dev-fine"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Approved Qualities",
+            "type": "array"
+          },
+          "max_models": {
+            "anyOf": [
+              {
+                "maximum": 25.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Models"
+          },
+          "max_print_seconds": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 31536000.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Print Seconds"
+          },
+          "max_quantity": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Quantity"
+          },
+          "max_tolerance_mm": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tolerance Mm"
+          },
+          "max_total": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Total"
+          },
+          "minimum_lead_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Lead Days"
+          }
+        },
+        "title": "EligibilityPolicy",
+        "type": "object"
+      },
+      "EligibilityPolicy-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_materials": {
+            "items": {
+              "enum": [
+                "dev-pla",
+                "dev-petg"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Approved Materials",
+            "type": "array"
+          },
+          "approved_profile_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Approved Profile Ids",
+            "type": "array"
+          },
+          "approved_qualities": {
+            "items": {
+              "enum": [
+                "dev-standard",
+                "dev-fine"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Approved Qualities",
+            "type": "array"
+          },
+          "max_models": {
+            "anyOf": [
+              {
+                "maximum": 25.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Models"
+          },
+          "max_print_seconds": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 31536000.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Print Seconds"
+          },
+          "max_quantity": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Quantity"
+          },
+          "max_tolerance_mm": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tolerance Mm"
+          },
+          "max_total": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Total"
+          },
+          "minimum_lead_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Lead Days"
+          }
+        },
+        "title": "EligibilityPolicy",
+        "type": "object"
+      },
+      "EligibilityRule": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "pass",
+              "fail",
+              "unknown"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "result",
+          "detail"
+        ],
+        "title": "EligibilityRule",
+        "type": "object"
+      },
       "ErrorResponse": {
         "properties": {
           "code": {
@@ -867,6 +1505,56 @@
           "gcode_bytes"
         ],
         "title": "Estimate",
+        "type": "object"
+      },
+      "EstimatePointer": {
+        "properties": {
+          "estimate_id": {
+            "format": "uuid",
+            "title": "Estimate Id",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "estimate_id",
+          "request_id",
+          "number"
+        ],
+        "title": "EstimatePointer",
+        "type": "object"
+      },
+      "EvaluatePrice": {
+        "additionalProperties": false,
+        "properties": {
+          "design_basis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignPricingBasis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "EvaluatePrice",
         "type": "object"
       },
       "FileMetadata": {
@@ -1495,6 +2183,34 @@
             "title": "Quantity",
             "type": "integer"
           },
+          "required_by": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required By"
+          },
+          "requirements_confirmed": {
+            "default": false,
+            "title": "Requirements Confirmed",
+            "type": "boolean"
+          },
+          "safety_critical": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Critical"
+          },
           "special_requirements": {
             "default": "",
             "maxLength": 2000,
@@ -1518,6 +2234,17 @@
             ],
             "title": "Unit Key",
             "type": "string"
+          },
+          "unusual_tolerance": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unusual Tolerance"
           }
         },
         "title": "ItemSpecification",
@@ -1547,6 +2274,254 @@
           "color_keys"
         ],
         "title": "MaterialOption",
+        "type": "object"
+      },
+      "OwnerEstimate": {
+        "properties": {
+          "acceptable": {
+            "const": false,
+            "default": false,
+            "title": "Acceptable",
+            "type": "boolean"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "binding_authorized": {
+            "const": false,
+            "default": false,
+            "title": "Binding Authorized",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency_code": {
+            "enum": [
+              "MMK",
+              "XTR"
+            ],
+            "title": "Currency Code",
+            "type": "string"
+          },
+          "current": {
+            "title": "Current",
+            "type": "boolean"
+          },
+          "decision": {
+            "enum": [
+              "pass",
+              "review",
+              "error"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "eligibility_rules": {
+            "items": {
+              "$ref": "#/components/schemas/EligibilityRule"
+            },
+            "title": "Eligibility Rules",
+            "type": "array"
+          },
+          "estimated_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Total"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "historical_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historical Total"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "const": "test_estimate",
+            "default": "test_estimate",
+            "title": "Kind",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PricingLineResponse"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "mode": {
+            "const": "simulation",
+            "default": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "notice": {
+            "default": "NON-BINDING TEST ESTIMATE \u2014 hypothetical simulation costs, not a final quotation.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "policy_checksum": {
+            "title": "Policy Checksum",
+            "type": "string"
+          },
+          "policy_id": {
+            "format": "uuid",
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "policy_snapshot": {
+            "additionalProperties": true,
+            "title": "Policy Snapshot",
+            "type": "object"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "integer"
+          },
+          "priced": {
+            "title": "Priced",
+            "type": "boolean"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "request_revision": {
+            "title": "Request Revision",
+            "type": "integer"
+          },
+          "review_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Review Reasons",
+            "type": "array"
+          },
+          "source_sha256": {
+            "title": "Source Sha256",
+            "type": "string"
+          },
+          "source_snapshot": {
+            "additionalProperties": true,
+            "title": "Source Snapshot",
+            "type": "object"
+          },
+          "stage_kind": {
+            "enum": [
+              "printing",
+              "design"
+            ],
+            "title": "Stage Kind",
+            "type": "string"
+          },
+          "stale_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Stale Reasons",
+            "type": "array"
+          },
+          "subtotal": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtotal"
+          },
+          "unknown_costs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unknown Costs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "request_id",
+          "number",
+          "stage_kind",
+          "currency_code",
+          "current",
+          "priced",
+          "estimated_total",
+          "policy_version",
+          "request_revision",
+          "decision",
+          "review_reasons",
+          "stale_reasons",
+          "assumptions",
+          "created_at",
+          "expires_at",
+          "historical_total",
+          "subtotal",
+          "policy_id",
+          "policy_checksum",
+          "policy_snapshot",
+          "source_sha256",
+          "source_snapshot",
+          "eligibility_rules",
+          "unknown_costs",
+          "lines"
+        ],
+        "title": "OwnerEstimate",
+        "type": "object"
+      },
+      "OwnerPricingView": {
+        "properties": {
+          "estimate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OwnerEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "estimate"
+        ],
+        "title": "OwnerPricingView",
         "type": "object"
       },
       "OwnerTask": {
@@ -1682,6 +2657,879 @@
           "special_requirements"
         ],
         "title": "OwnerTask",
+        "type": "object"
+      },
+      "PolicyResponse": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/PricingPolicyDefinition-Output"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency_code": {
+            "enum": [
+              "MMK",
+              "XTR"
+            ],
+            "title": "Currency Code",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "stage_kind": {
+            "enum": [
+              "printing",
+              "design"
+            ],
+            "title": "Stage Kind",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "stage_kind",
+          "version",
+          "currency_code",
+          "mode",
+          "configuration",
+          "checksum",
+          "active",
+          "created_at"
+        ],
+        "title": "PolicyResponse",
+        "type": "object"
+      },
+      "PricingConfiguration": {
+        "properties": {
+          "availability": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AvailabilityResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyResponse"
+            },
+            "title": "Policies",
+            "type": "array"
+          }
+        },
+        "required": [
+          "policies",
+          "availability"
+        ],
+        "title": "PricingConfiguration",
+        "type": "object"
+      },
+      "PricingLineResponse": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "assumption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assumption"
+          },
+          "component_code": {
+            "title": "Component Code",
+            "type": "string"
+          },
+          "item_kind": {
+            "enum": [
+              "print_item",
+              "design_service"
+            ],
+            "title": "Item Kind",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          },
+          "request_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Item Id"
+          }
+        },
+        "required": [
+          "item_kind",
+          "request_item_id",
+          "position",
+          "component_code",
+          "quantity",
+          "rate",
+          "amount",
+          "assumption"
+        ],
+        "title": "PricingLineResponse",
+        "type": "object"
+      },
+      "PricingPolicyDefinition-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "average_power_kw": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Power Kw"
+          },
+          "complexity_multipliers": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "ge": 0,
+                  "le": "1000000000000000",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 3,
+            "title": "Complexity Multipliers",
+            "type": "object"
+          },
+          "currency_code": {
+            "enum": [
+              "MMK",
+              "XTR"
+            ],
+            "title": "Currency Code",
+            "type": "string"
+          },
+          "deliverable_fee": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deliverable Fee"
+          },
+          "design_per_hour": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Design Per Hour"
+          },
+          "electricity_per_kwh": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Electricity Per Kwh"
+          },
+          "eligibility": {
+            "$ref": "#/components/schemas/EligibilityPolicy-Input"
+          },
+          "estimate_ttl_seconds": {
+            "maximum": 86400.0,
+            "minimum": 60.0,
+            "title": "Estimate Ttl Seconds",
+            "type": "integer"
+          },
+          "gross_margin": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Margin"
+          },
+          "labor_per_hour": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labor Per Hour"
+          },
+          "machine_per_hour": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Machine Per Hour"
+          },
+          "material_per_g": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "ge": 0,
+                  "le": "1000000000000000",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 8,
+            "title": "Material Per G",
+            "type": "object"
+          },
+          "minimum_total": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Total"
+          },
+          "overhead_per_hour": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overhead Per Hour"
+          },
+          "postprocess_hours_per_item": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postprocess Hours Per Item"
+          },
+          "risk_fraction": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Fraction"
+          },
+          "rounding_mode": {
+            "enum": [
+              "HALF_UP",
+              "CEILING"
+            ],
+            "title": "Rounding Mode",
+            "type": "string"
+          },
+          "rounding_step": {
+            "ge": 0,
+            "le": "1000000000000000",
+            "title": "Rounding Step",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "setup_hours": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setup Hours"
+          },
+          "shipping_flat": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shipping Flat"
+          },
+          "simulation_only": {
+            "const": true,
+            "default": true,
+            "title": "Simulation Only",
+            "type": "boolean"
+          },
+          "stage_kind": {
+            "enum": [
+              "printing",
+              "design"
+            ],
+            "title": "Stage Kind",
+            "type": "string"
+          },
+          "support_overhead_fraction": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Overhead Fraction"
+          },
+          "tax_fraction": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Fraction"
+          },
+          "usage_rights_fees": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "ge": 0,
+                  "le": "1000000000000000",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 3,
+            "title": "Usage Rights Fees",
+            "type": "object"
+          },
+          "waste_fraction": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waste Fraction"
+          },
+          "zero_cost_reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "maxProperties": 15,
+            "title": "Zero Cost Reasons",
+            "type": "object"
+          }
+        },
+        "required": [
+          "stage_kind",
+          "currency_code",
+          "rounding_step",
+          "rounding_mode",
+          "estimate_ttl_seconds",
+          "risk_fraction",
+          "gross_margin",
+          "tax_fraction",
+          "minimum_total"
+        ],
+        "title": "PricingPolicyDefinition",
+        "type": "object"
+      },
+      "PricingPolicyDefinition-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "average_power_kw": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Power Kw"
+          },
+          "complexity_multipliers": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "ge": 0,
+                  "le": "1000000000000000",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 3,
+            "title": "Complexity Multipliers",
+            "type": "object"
+          },
+          "currency_code": {
+            "enum": [
+              "MMK",
+              "XTR"
+            ],
+            "title": "Currency Code",
+            "type": "string"
+          },
+          "deliverable_fee": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deliverable Fee"
+          },
+          "design_per_hour": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Design Per Hour"
+          },
+          "electricity_per_kwh": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Electricity Per Kwh"
+          },
+          "eligibility": {
+            "$ref": "#/components/schemas/EligibilityPolicy-Output"
+          },
+          "estimate_ttl_seconds": {
+            "maximum": 86400.0,
+            "minimum": 60.0,
+            "title": "Estimate Ttl Seconds",
+            "type": "integer"
+          },
+          "gross_margin": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Margin"
+          },
+          "labor_per_hour": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labor Per Hour"
+          },
+          "machine_per_hour": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Machine Per Hour"
+          },
+          "material_per_g": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "ge": 0,
+                  "le": "1000000000000000",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 8,
+            "title": "Material Per G",
+            "type": "object"
+          },
+          "minimum_total": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Total"
+          },
+          "overhead_per_hour": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overhead Per Hour"
+          },
+          "postprocess_hours_per_item": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postprocess Hours Per Item"
+          },
+          "risk_fraction": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Fraction"
+          },
+          "rounding_mode": {
+            "enum": [
+              "HALF_UP",
+              "CEILING"
+            ],
+            "title": "Rounding Mode",
+            "type": "string"
+          },
+          "rounding_step": {
+            "ge": 0,
+            "le": "1000000000000000",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Rounding Step",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "setup_hours": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setup Hours"
+          },
+          "shipping_flat": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shipping Flat"
+          },
+          "simulation_only": {
+            "const": true,
+            "default": true,
+            "title": "Simulation Only",
+            "type": "boolean"
+          },
+          "stage_kind": {
+            "enum": [
+              "printing",
+              "design"
+            ],
+            "title": "Stage Kind",
+            "type": "string"
+          },
+          "support_overhead_fraction": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Overhead Fraction"
+          },
+          "tax_fraction": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Fraction"
+          },
+          "usage_rights_fees": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "ge": 0,
+                  "le": "1000000000000000",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 3,
+            "title": "Usage Rights Fees",
+            "type": "object"
+          },
+          "waste_fraction": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "0.95",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waste Fraction"
+          },
+          "zero_cost_reasons": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "maxProperties": 15,
+            "title": "Zero Cost Reasons",
+            "type": "object"
+          }
+        },
+        "required": [
+          "stage_kind",
+          "currency_code",
+          "rounding_step",
+          "rounding_mode",
+          "estimate_ttl_seconds",
+          "risk_fraction",
+          "gross_margin",
+          "tax_fraction",
+          "minimum_total"
+        ],
+        "title": "PricingPolicyDefinition",
         "type": "object"
       },
       "PrintingOptions": {
@@ -1835,6 +3683,58 @@
           "created_at"
         ],
         "title": "ProjectResponse",
+        "type": "object"
+      },
+      "PublishAvailability": {
+        "additionalProperties": false,
+        "properties": {
+          "configuration": {
+            "$ref": "#/components/schemas/AvailabilityDefinition-Input"
+          },
+          "expected_version": {
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 8,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "configuration",
+          "reason"
+        ],
+        "title": "PublishAvailability",
+        "type": "object"
+      },
+      "PublishPolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "configuration": {
+            "$ref": "#/components/schemas/PricingPolicyDefinition-Input"
+          },
+          "expected_version": {
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 8,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "configuration",
+          "reason"
+        ],
+        "title": "PublishPolicy",
         "type": "object"
       },
       "PublishProof": {
@@ -2382,6 +4282,89 @@
         "title": "StatusResponse",
         "type": "object"
       },
+      "StockFixture-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "available_g": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available G"
+          },
+          "color_key": {
+            "enum": [
+              "dev-white",
+              "dev-black"
+            ],
+            "title": "Color Key",
+            "type": "string"
+          },
+          "material_key": {
+            "enum": [
+              "dev-pla",
+              "dev-petg"
+            ],
+            "title": "Material Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "material_key",
+          "color_key",
+          "available_g"
+        ],
+        "title": "StockFixture",
+        "type": "object"
+      },
+      "StockFixture-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "available_g": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "le": "1000000000000000",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available G"
+          },
+          "color_key": {
+            "enum": [
+              "dev-white",
+              "dev-black"
+            ],
+            "title": "Color Key",
+            "type": "string"
+          },
+          "material_key": {
+            "enum": [
+              "dev-pla",
+              "dev-petg"
+            ],
+            "title": "Material Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "material_key",
+          "color_key",
+          "available_g"
+        ],
+        "title": "StockFixture",
+        "type": "object"
+      },
       "TaskPage": {
         "properties": {
           "items": {
@@ -2577,7 +4560,7 @@
   },
   "info": {
     "title": "3DPS Mini App API",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -5527,6 +7510,513 @@
         ]
       }
     },
+    "/api/v1/owner/pricing/availability-fixtures": {
+      "post": {
+        "operationId": "create_fixture_api_v1_owner_pricing_availability_fixtures_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishAvailability"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Create Fixture",
+        "tags": [
+          "simulation-pricing"
+        ]
+      }
+    },
+    "/api/v1/owner/pricing/configuration": {
+      "get": {
+        "operationId": "configuration_api_v1_owner_pricing_configuration_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingConfiguration"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Configuration",
+        "tags": [
+          "simulation-pricing"
+        ]
+      }
+    },
+    "/api/v1/owner/pricing/hypothetical-policy": {
+      "get": {
+        "operationId": "template_api_v1_owner_pricing_hypothetical_policy_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "stage_kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "printing",
+                "design"
+              ],
+              "title": "Stage Kind",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingPolicyDefinition-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Template",
+        "tags": [
+          "simulation-pricing"
+        ]
+      }
+    },
+    "/api/v1/owner/pricing/policies": {
+      "post": {
+        "operationId": "create_policy_api_v1_owner_pricing_policies_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishPolicy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Create Policy",
+        "tags": [
+          "simulation-pricing"
+        ]
+      }
+    },
     "/api/v1/owner/processing-tasks": {
       "get": {
         "operationId": "queue_api_v1_owner_processing_tasks_get",
@@ -5986,6 +8476,405 @@
         "summary": "Owner Requests",
         "tags": [
           "business-foundation"
+        ]
+      }
+    },
+    "/api/v1/owner/requests/{request_id}/estimates": {
+      "get": {
+        "operationId": "owner_view_api_v1_owner_requests__request_id__estimates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerPricingView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Owner View",
+        "tags": [
+          "simulation-pricing"
+        ]
+      },
+      "post": {
+        "operationId": "owner_evaluate_api_v1_owner_requests__request_id__estimates_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluatePrice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimatePointer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Owner Evaluate",
+        "tags": [
+          "simulation-pricing"
+        ]
+      }
+    },
+    "/api/v1/owner/requests/{request_id}/estimates/{estimate_id}": {
+      "get": {
+        "operationId": "history_api_v1_owner_requests__request_id__estimates__estimate_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "estimate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Estimate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerEstimate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "History",
+        "tags": [
+          "simulation-pricing"
         ]
       }
     },
@@ -7606,6 +10495,272 @@
         "summary": "Upload Design",
         "tags": [
           "design-intake"
+        ]
+      }
+    },
+    "/api/v1/requests/{request_id}/estimates": {
+      "get": {
+        "operationId": "customer_view_api_v1_requests__request_id__estimates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerPricingView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Customer View",
+        "tags": [
+          "simulation-pricing"
+        ]
+      },
+      "post": {
+        "operationId": "customer_evaluate_api_v1_requests__request_id__estimates_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 8,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluatePrice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimatePointer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Customer Evaluate",
+        "tags": [
+          "simulation-pricing"
         ]
       }
     },

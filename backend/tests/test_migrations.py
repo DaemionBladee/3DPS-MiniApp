@@ -498,7 +498,7 @@ async def test_analysis_upgrade_preserves_m05_data_and_guarded_recovery(
                 {"u": user},
             )
         await engine.dispose()
-        run_migration(migration_database, "upgrade", "head")
+        run_migration(migration_database, "upgrade", "0005_isolated_slicing")
         async with engine.begin() as db:
             assert (
                 await db.scalar(text("SELECT version_num FROM alembic_version"))
@@ -514,7 +514,7 @@ async def test_analysis_upgrade_preserves_m05_data_and_guarded_recovery(
             assert await db.scalar(text("SELECT to_regclass('public.printers')")) is None
         await engine.dispose()
         run_migration(migration_database, "downgrade", "0004_design_intake")
-        run_migration(migration_database, "upgrade", "head")
+        run_migration(migration_database, "upgrade", "0005_isolated_slicing")
         async with engine.begin() as db:
             await db.execute(
                 text(
@@ -527,5 +527,106 @@ async def test_analysis_upgrade_preserves_m05_data_and_guarded_recovery(
         async with engine.begin() as db:
             assert await db.scalar(text("SELECT count(*) FROM virtual_printer_models")) == 1
             assert await db.scalar(text("SELECT id FROM design_projects")) == design
+    finally:
+        await engine.dispose()
+
+
+async def test_m07_upgrade_preserves_auth_and_prior_history_and_guards_recovery(migration_database):
+    run_migration(migration_database, "upgrade", "0005_isolated_slicing")
+    engine = create_async_engine(migration_database, hide_parameters=True)
+    try:
+        async with engine.begin() as db:
+            identity = await db.scalar(
+                text(
+                    "INSERT INTO users(telegram_id,display_name,role) VALUES(111,'Synthetic Owner','owner') RETURNING id"
+                )
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO sessions(user_id,token_hash,init_data_hash,expires_at) VALUES(:u,repeat('a',64),repeat('b',64),now()+interval '1 hour')"
+                ),
+                {"u": identity},
+            )
+            project = await db.scalar(
+                text(
+                    "INSERT INTO service_projects(customer_id,kind) VALUES(:u,'printing') RETURNING id"
+                ),
+                {"u": identity},
+            )
+            request = await db.scalar(
+                text(
+                    "INSERT INTO service_requests(service_project_id,customer_id,service_type,stage_kind,canonical_spec_sha256) VALUES(:p,:u,'printing','printing',repeat('a',64)) RETURNING id"
+                ),
+                {"p": project, "u": identity},
+            )
+            audit = await db.scalar(
+                text(
+                    "INSERT INTO audit_logs(actor_user_id,action,entity_id,metadata_snapshot) VALUES(:u,'request.created',:r,jsonb_build_object('legacy',true)) RETURNING id"
+                ),
+                {"u": identity, "r": request},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO notification_outbox(audit_log_id,recipient_user_id,event_type,payload_minimized) VALUES(:a,:u,'request.created','{}')"
+                ),
+                {"a": audit, "u": identity},
+            )
+            await db.execute(
+                text(
+                    "INSERT INTO idempotency_records(actor_user_id,action,key,request_hash,response_json) VALUES(:u,'request.create','m07-migration-legacy',repeat('b',64),jsonb_build_object('preserved',true))"
+                ),
+                {"u": identity},
+            )
+        run_migration(migration_database, "upgrade", "head")
+        async with engine.begin() as db:
+            assert (
+                await db.scalar(text("SELECT version_num FROM alembic_version"))
+                == "0006_pricing_eligibility"
+            )
+            assert await db.scalar(text("SELECT token_hash FROM sessions")) == "a" * 64
+            assert await db.scalar(text("SELECT id FROM users")) == identity
+            assert await db.scalar(text("SELECT id FROM service_requests")) == request
+            assert (
+                await db.scalar(text("SELECT canonical_spec_sha256 FROM service_requests"))
+                == "a" * 64
+            )
+            assert await db.scalar(text("SELECT entity_kind FROM audit_logs")) == "request"
+            assert await db.scalar(text("SELECT entity_id FROM audit_logs")) == request
+            assert await db.scalar(text("SELECT metadata_snapshot FROM audit_logs")) == {
+                "legacy": True
+            }
+            assert await db.scalar(text("SELECT count(*) FROM notification_outbox")) == 1
+            assert await db.scalar(text("SELECT response_json FROM idempotency_records")) == {
+                "preserved": True
+            }
+            for table in (
+                "pricing_policies",
+                "pricing_availability_fixtures",
+                "pricing_estimates",
+                "pricing_estimate_lines",
+            ):
+                assert await db.scalar(text("SELECT to_regclass(:table)"), {"table": table})
+            assert (
+                await db.scalar(
+                    text(
+                        "SELECT count(*) FROM pg_trigger WHERE tgname IN ('pricing_estimate_balance','pricing_line_balance') AND tgdeferrable AND tginitdeferred"
+                    )
+                )
+                == 2
+            )
+        run_migration(migration_database, "downgrade", "0005_isolated_slicing")
+        run_migration(migration_database, "upgrade", "head")
+        async with engine.begin() as db:
+            await db.execute(
+                text(
+                    "INSERT INTO pricing_policies(stage_kind,version,currency_code,configuration,checksum,created_by,reason) VALUES('design',1,'XTR',jsonb_build_object('simulation_only',true),repeat('c',64),:u,'Synthetic migration recovery fixture')"
+                ),
+                {"u": identity},
+            )
+        with pytest.raises(subprocess.CalledProcessError):
+            run_migration(migration_database, "downgrade", "0005_isolated_slicing")
+        async with engine.begin() as db:
+            assert await db.scalar(text("SELECT count(*) FROM pricing_policies")) == 1
+            assert await db.scalar(text("SELECT count(*) FROM sessions")) == 1
     finally:
         await engine.dispose()

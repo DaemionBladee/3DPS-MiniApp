@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { EmptyState, ErrorState, LoadingState } from '../../components/ui/States'
 import { apiDownload } from '../../lib/api/client'
+import { PricingPanel } from '../pricing/PricingPanel'
 import { AnalysisPanel } from '../analysis/AnalysisPanel'
 import { useAuth } from '../auth/context'
 import { DownloadButton, FilePicker, ItemEditor, PreferencesEditor } from './PrintForms'
@@ -17,6 +18,8 @@ function ItemSummary({ item, catalog, download }: { item: ItemDetail; catalog: P
   const label = (key: string | null | undefined) => labels.find(option => option.key === key)?.label ?? 'Not selected'
   return <div className="print-summary">
     <dl><div><dt>Quantity</dt><dd>{spec.quantity}</dd></div><div><dt>Material</dt><dd>{label(spec.material_key)}</dd></div><div><dt>Color</dt><dd>{label(spec.color_key)}</dd></div><div><dt>Quality</dt><dd>{label(spec.quality_key)}</dd></div><div><dt>Units</dt><dd>{label(spec.unit_key)} · {spec.unit_confirmed ? 'Confirmed' : 'Not confirmed'}</dd></div></dl>
+    <p>Required by: {spec.required_by || 'Not specified'} · requirements {spec.requirements_confirmed ? 'confirmed' : 'unconfirmed'}</p>
+    <p>Safety-critical use: {spec.safety_critical == null ? 'Needs discussion' : spec.safety_critical ? 'Yes' : 'No'} · unusual tolerance: {spec.unusual_tolerance == null ? 'Needs discussion' : spec.unusual_tolerance ? 'Yes' : 'No'}</p>
     {spec.description && <p>{spec.description}</p>}
     {spec.special_requirements && <div className="print-special"><Badge tone="accent">Special requirements</Badge><p>{spec.special_requirements}</p></div>}
     {['not-sure'].some(value => [spec.material_key, spec.color_key, spec.quality_key].includes(value as 'not-sure')) && <p>Owner review required for uncertain settings.</p>}
@@ -62,6 +65,7 @@ export function PrintRequestPage({ owner = false }: { owner?: boolean }) {
     <Link to={owner ? '/owner' : '/app'} className="print-back">← {owner ? 'Owner workspace' : 'Your projects'}</Link>
     <section className="welcome-row"><div><p className="eyebrow">PRIVATE PRINTING REQUEST</p><h1>{['submitted', 'analyzing', 'manual_review'].includes(data.request.status) ? 'Printing request submitted' : data.request.status === 'cancelled' ? 'Cancelled printing request' : 'Your printing draft'}</h1><p className="page-description">{owner ? `Customer: ${data.customer_display_name}` : 'Your files and settings are saved privately to this request.'}</p></div><Badge tone="accent">Simulation only</Badge></section>
     {['submitted', 'analyzing', 'manual_review'].includes(data.request.status) && <AnalysisPanel requestId={requestId} version={data.request.version} owner={owner} refresh={intake.reload} />}
+    {['submitted', 'analyzing', 'manual_review'].includes(data.request.status) && <PricingPanel key={requestId} requestId={requestId} version={data.request.version} owner={owner} />}
     {editable && <nav aria-label="Printing intake steps" className="print-steps">{['Models', 'Specifications', 'Fulfillment', 'Review'].map((name, index) => <Button key={name} variant={step === index ? 'primary' : 'secondary'} aria-current={step === index ? 'step' : undefined} disabled={intake.busy || hasDirty || intake.locked} onClick={() => setStep(index)}>{index + 1}. {name}</Button>)}</nav>}
     <Card className="print-notice"><p>{catalog.notice}</p><p>STL, Core 3MF and OBJ · up to {Math.floor(catalog.max_file_bytes / 1024 / 1024)} MiB each · {catalog.max_request_files} models per request.</p><p>OBJ material/texture references and unsupported 3MF extensions must be removed before upload.</p></Card>
     {intake.error && <Card role="alert"><h2>{intake.error.status === 409 ? 'Draft changed or upload conflicted' : 'Draft could not be saved'}</h2><p>{intake.error.message}</p><div className="print-actions"><Button onClick={intake.retry}>Retry saved change</Button><Button variant="secondary" onClick={() => { void intake.reload().then(() => setDirty({})).catch(() => undefined) }}>Reload saved draft</Button></div></Card>}

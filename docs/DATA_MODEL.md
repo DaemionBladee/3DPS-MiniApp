@@ -178,3 +178,7 @@ hash and current validated file checksum are exposed as authoritative. An old
 profile/run remains historical after rescheduling. All existing migrations are
 preserved. Empty M06 schemas may downgrade in disposable tests; retained M06
 profiles, results, attempts, dimension confirmations or system audits block removal.
+
+## M07 implementation boundary
+
+Migration 0006 adds pricing_policies, pricing_availability_fixtures, pricing_estimates and pricing_estimate_lines only. Design-service cost lines require no print item. Computed money is NUMERIC(28,8); policy decimal parameters use immutable JSON strings. See [pricing integrity](PRICING_POLICIES.md).

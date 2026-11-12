@@ -32,7 +32,7 @@ async def registry(app):
     if image:
         assert image.startswith("sha256:"), "Tests require immutable image ID"
         probe = json.loads(
-            await command("run", "--rm", *container_arguments(image), "--probe=base")
+            await command("run", "--rm", *container_arguments(image), "--probe=base", timeout=60)
         )
         executable = probe["executable_sha256"]
     else:

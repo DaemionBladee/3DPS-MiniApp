@@ -12,6 +12,7 @@ from app.database import (
     business_models,  # noqa: F401 -- register M03 metadata
     design_models,  # noqa: F401 - register M05 metadata
     intake_models,  # noqa: F401 - register M04 metadata
+    pricing_models,  # noqa: F401 - register M07 metadata
 )
 from app.database.models import Base
 

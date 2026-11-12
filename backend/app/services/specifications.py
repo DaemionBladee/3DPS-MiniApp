@@ -21,7 +21,21 @@ def item_specification(item: RequestItem) -> ItemSpecification:
 
 
 def canonical_item(item: RequestItem) -> dict[str, Any]:
-    value = item_specification(item).model_dump()
+    value = item_specification(item).model_dump(mode="json")
+    # M07 confirmations are absent from the canonical form of every older row.
+    if (
+        value["required_by"] is None
+        and value["safety_critical"] is None
+        and value["unusual_tolerance"] is None
+        and not value["requirements_confirmed"]
+    ):
+        for key in [
+            "required_by",
+            "safety_critical",
+            "unusual_tolerance",
+            "requirements_confirmed",
+        ]:
+            value.pop(key)
     # Preserve every pre-M06 canonical hash and immutable submitted snapshot.
     if value["dimension_x_mm"] is None:
         for key in ["dimension_x_mm", "dimension_y_mm", "dimension_z_mm", "dimension_tolerance_mm"]:

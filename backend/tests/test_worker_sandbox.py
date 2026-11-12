@@ -43,6 +43,7 @@ async def test_actual_sandbox_denies_credentials_network_writes_and_resource_ove
         "--env=BOT_TOKEN=synthetic-bot-canary",
         *container_arguments(image),
         "--probe=" + mode,
+        timeout=75,  # bounded cold-start allowance plus the probe runtime
     )
     data = json.loads(output)["probe"]
     assert data["forbidden_environment"] == [] and data["network_devices"] == ["lo"]
@@ -63,7 +64,7 @@ async def test_actual_kernel_cpu_limit_kills_worker():
     if not image:
         pytest.skip("Requires real immutable worker image")
     with pytest.raises(SandboxFailure, match="worker_crashed"):
-        await command("run", "--rm", *container_arguments(image), "--probe=cpu", timeout=15)
+        await command("run", "--rm", *container_arguments(image), "--probe=cpu", timeout=75)
 
 
 @pytest.mark.parametrize(

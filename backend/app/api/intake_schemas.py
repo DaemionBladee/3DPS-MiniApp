@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Any, Literal
+from datetime import date, datetime
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -21,6 +21,20 @@ class ItemSpecification(BusinessInput):
     unit_key: UnitKey = "mm"
     unit_confirmed: bool = False
     special_requirements: str = Field(default="", max_length=2000)
+
+    required_by: Annotated[date, Field(strict=False)] | None = None
+    safety_critical: bool | None = None
+    unusual_tolerance: bool | None = None
+    requirements_confirmed: bool = False
+
+    @field_validator("required_by", mode="before")
+    @classmethod
+    def iso_deadline(cls, value: Any) -> Any:
+        if value is None or isinstance(value, date):
+            return value
+        if not isinstance(value, str) or date.fromisoformat(value).isoformat() != value:
+            raise ValueError("Use a complete ISO date")
+        return value
 
     dimension_x_mm: float | None = Field(default=None, gt=0, le=1000000, allow_inf_nan=False)
     dimension_y_mm: float | None = Field(default=None, gt=0, le=1000000, allow_inf_nan=False)
@@ -110,7 +124,16 @@ class IntakeDetail(BaseModel):
 
 
 class AnalysisStatus(BaseModel):
-    state: Literal["not_submitted", "pending", "processing", "completed", "manual_review", "needs_clarification", "failed", "superseded"]
+    state: Literal[
+        "not_submitted",
+        "pending",
+        "processing",
+        "completed",
+        "manual_review",
+        "needs_clarification",
+        "failed",
+        "superseded",
+    ]
     tasks: list[TaskResponse]
     processing_available: bool = False
 

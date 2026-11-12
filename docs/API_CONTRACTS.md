@@ -162,3 +162,7 @@ task states extend to pending/leased/succeeded/failed/superseded. Request status
 be analyzing/manual_review while its submitted specification stays frozen. The API
 exports no worker shell, arbitrary config, artifact/G-code download or live feature.
 OpenAPI and TypeScript declarations are generated from actual FastAPI schemas.
+
+## M07 implementation boundary
+
+Implemented M07 endpoints, payload rules, Customer/Owner projections and freshness semantics are documented in [PRICING_POLICIES.md](PRICING_POLICIES.md). The generated OpenAPI uses currency_code and decimal strings. Planned quotation routes elsewhere in this document remain future work.

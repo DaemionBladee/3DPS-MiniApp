@@ -318,3 +318,8 @@ h1 { font-size: clamp(24px, 2.5vw, 34px); letter-spacing: -1.2px; line-height: 1
 
 .analysis-checksum { overflow-wrap: anywhere; font-size: .8rem; }
 .analysis-panel details { margin-block: 1rem; }
+
+.pricing-table { overflow-x: auto; }
+.pricing-table th, .pricing-table td { padding: .5rem; text-align: left; border-bottom: 1px solid var(--border-color, #8884); }
+.pricing-json { min-height: 14rem; font-family: monospace; }
+.pricing-snapshot { overflow: auto; max-height: 28rem; font-size: .8rem; }

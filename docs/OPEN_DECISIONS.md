@@ -107,3 +107,7 @@ quote/paid fixture cannot satisfy future M08/M09 quote or payment guards.
   reliable support-material breakdown, self-intersection/strength certification
   and calibrated costing remain outside M06. No inferred approval substitutes for
   M07–M16 guards. Real Telegram device presentation still needs external checks.
+
+## M07 implementation boundary
+
+M07 resolves only its own portions of M00-D02/D03/D04 through [ADR 0007](adr/0007-simulation-pricing-and-eligibility.md): typed design-service lines, immutable test_estimate/simulation mapping and currency_code. Future offer schema and live combined-service payment classification still require review. No commercial rates, tax policy or physical calibration is approved by hypothetical test configuration.

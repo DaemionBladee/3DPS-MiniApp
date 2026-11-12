@@ -395,6 +395,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/owner/pricing/availability-fixtures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Fixture */
+        post: operations["create_fixture_api_v1_owner_pricing_availability_fixtures_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/owner/pricing/configuration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Configuration */
+        get: operations["configuration_api_v1_owner_pricing_configuration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/owner/pricing/hypothetical-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Template */
+        get: operations["template_api_v1_owner_pricing_hypothetical_policy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/owner/pricing/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Policy */
+        post: operations["create_policy_api_v1_owner_pricing_policies_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/owner/processing-tasks": {
         parameters: {
             query?: never;
@@ -438,6 +506,41 @@ export interface paths {
         };
         /** Owner Requests */
         get: operations["owner_requests_api_v1_owner_requests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/owner/requests/{request_id}/estimates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Owner View */
+        get: operations["owner_view_api_v1_owner_requests__request_id__estimates_get"];
+        put?: never;
+        /** Owner Evaluate */
+        post: operations["owner_evaluate_api_v1_owner_requests__request_id__estimates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/owner/requests/{request_id}/estimates/{estimate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History */
+        get: operations["history_api_v1_owner_requests__request_id__estimates__estimate_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -596,6 +699,24 @@ export interface paths {
         put?: never;
         /** Upload Design */
         post: operations["upload_design_api_v1_requests__request_id__design_files_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/requests/{request_id}/estimates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customer View */
+        get: operations["customer_view_api_v1_requests__request_id__estimates_get"];
+        put?: never;
+        /** Customer Evaluate */
+        post: operations["customer_evaluate_api_v1_requests__request_id__estimates_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -825,11 +946,78 @@ export interface components {
             environment: "simulation";
             user: components["schemas"]["UserResponse"];
         };
+        /** AvailabilityDefinition */
+        "AvailabilityDefinition-Input": {
+            /** Capacity */
+            capacity?: components["schemas"]["CapacityFixture"][];
+            /**
+             * Simulation Only
+             * @default true
+             * @constant
+             */
+            simulation_only: true;
+            /** Stock */
+            stock?: components["schemas"]["StockFixture-Input"][];
+            /** Ttl Seconds */
+            ttl_seconds: number;
+        };
+        /** AvailabilityDefinition */
+        "AvailabilityDefinition-Output": {
+            /** Capacity */
+            capacity?: components["schemas"]["CapacityFixture"][];
+            /**
+             * Simulation Only
+             * @default true
+             * @constant
+             */
+            simulation_only: true;
+            /** Stock */
+            stock?: components["schemas"]["StockFixture-Output"][];
+            /** Ttl Seconds */
+            ttl_seconds: number;
+        };
+        /** AvailabilityResponse */
+        AvailabilityResponse: {
+            /** Active */
+            active: boolean;
+            /** Checksum */
+            checksum: string;
+            configuration: components["schemas"]["AvailabilityDefinition-Output"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Mode
+             * @constant
+             */
+            mode: "simulation";
+            /** Version */
+            version: number;
+        };
         /** BriefCommand */
         BriefCommand: {
             brief: components["schemas"]["DesignBrief"];
             /** Expected Version */
             expected_version: number;
+        };
+        /** CapacityFixture */
+        CapacityFixture: {
+            /** Available Seconds */
+            available_seconds?: number | null;
+            /** Profile Id */
+            profile_id: string;
         };
         /** CatalogOption */
         CatalogOption: {
@@ -871,6 +1059,95 @@ export interface components {
         CsrfResponse: {
             /** Csrf Token */
             csrf_token: string;
+        };
+        /** CustomerEstimate */
+        CustomerEstimate: {
+            /**
+             * Acceptable
+             * @default false
+             * @constant
+             */
+            acceptable: false;
+            /** Assumptions */
+            assumptions: string[];
+            /**
+             * Binding Authorized
+             * @default false
+             * @constant
+             */
+            binding_authorized: false;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Currency Code
+             * @enum {string}
+             */
+            currency_code: "MMK" | "XTR";
+            /** Current */
+            current: boolean;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "pass" | "review" | "error";
+            /** Estimated Total */
+            estimated_total: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @default test_estimate
+             * @constant
+             */
+            kind: "test_estimate";
+            /**
+             * Mode
+             * @default simulation
+             * @constant
+             */
+            mode: "simulation";
+            /**
+             * Notice
+             * @default NON-BINDING TEST ESTIMATE — hypothetical simulation costs, not a final quotation.
+             */
+            notice: string;
+            /** Number */
+            number: number;
+            /** Policy Version */
+            policy_version: number;
+            /** Priced */
+            priced: boolean;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request Revision */
+            request_revision: number;
+            /** Review Reasons */
+            review_reasons: string[];
+            /**
+             * Stage Kind
+             * @enum {string}
+             */
+            stage_kind: "printing" | "design";
+            /** Stale Reasons */
+            stale_reasons: string[];
+        };
+        /** CustomerPricingView */
+        CustomerPricingView: {
+            estimate: components["schemas"]["CustomerEstimate"] | null;
         };
         /** DesignBrief */
         DesignBrief: {
@@ -973,6 +1250,28 @@ export interface components {
             /** Next Offset */
             next_offset: number | null;
         };
+        /** DesignPricingBasis */
+        DesignPricingBasis: {
+            /**
+             * Complexity
+             * @enum {string}
+             */
+            complexity: "simple" | "standard" | "complex";
+            /** Estimated Hours */
+            estimated_hours: string;
+            /** Hours Per Revision */
+            hours_per_revision: string;
+            /**
+             * Scope Id
+             * Format: uuid
+             */
+            scope_id: string;
+            /**
+             * Usage Rights
+             * @enum {string}
+             */
+            usage_rights: "personal" | "commercial" | "exclusive";
+        };
         /** DesignReviewResponse */
         DesignReviewResponse: {
             /**
@@ -1051,6 +1350,60 @@ export interface components {
             /** Fulfillment Notes */
             fulfillment_notes?: string | null;
         };
+        /** EligibilityPolicy */
+        "EligibilityPolicy-Input": {
+            /** Approved Materials */
+            approved_materials?: ("dev-pla" | "dev-petg")[];
+            /** Approved Profile Ids */
+            approved_profile_ids?: string[];
+            /** Approved Qualities */
+            approved_qualities?: ("dev-standard" | "dev-fine")[];
+            /** Max Models */
+            max_models?: number | null;
+            /** Max Print Seconds */
+            max_print_seconds?: number | null;
+            /** Max Quantity */
+            max_quantity?: number | null;
+            /** Max Tolerance Mm */
+            max_tolerance_mm?: string | null;
+            /** Max Total */
+            max_total?: string | null;
+            /** Minimum Lead Days */
+            minimum_lead_days?: number | null;
+        };
+        /** EligibilityPolicy */
+        "EligibilityPolicy-Output": {
+            /** Approved Materials */
+            approved_materials?: ("dev-pla" | "dev-petg")[];
+            /** Approved Profile Ids */
+            approved_profile_ids?: string[];
+            /** Approved Qualities */
+            approved_qualities?: ("dev-standard" | "dev-fine")[];
+            /** Max Models */
+            max_models?: number | null;
+            /** Max Print Seconds */
+            max_print_seconds?: number | null;
+            /** Max Quantity */
+            max_quantity?: number | null;
+            /** Max Tolerance Mm */
+            max_tolerance_mm?: string | null;
+            /** Max Total */
+            max_total?: string | null;
+            /** Minimum Lead Days */
+            minimum_lead_days?: number | null;
+        };
+        /** EligibilityRule */
+        EligibilityRule: {
+            /** Code */
+            code: string;
+            /** Detail */
+            detail: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "pass" | "fail" | "unknown";
+        };
         /** ErrorResponse */
         ErrorResponse: {
             /** Code */
@@ -1082,6 +1435,27 @@ export interface components {
             support_estimate_available: false;
             /** Support G */
             support_g?: null;
+        };
+        /** EstimatePointer */
+        EstimatePointer: {
+            /**
+             * Estimate Id
+             * Format: uuid
+             */
+            estimate_id: string;
+            /** Number */
+            number: number;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+        };
+        /** EvaluatePrice */
+        EvaluatePrice: {
+            design_basis?: components["schemas"]["DesignPricingBasis"] | null;
+            /** Expected Version */
+            expected_version: number;
         };
         /** FileMetadata */
         FileMetadata: {
@@ -1304,6 +1678,15 @@ export interface components {
              * @default 1
              */
             quantity: number;
+            /** Required By */
+            required_by?: string | null;
+            /**
+             * Requirements Confirmed
+             * @default false
+             */
+            requirements_confirmed: boolean;
+            /** Safety Critical */
+            safety_critical?: boolean | null;
             /**
              * Special Requirements
              * @default
@@ -1320,6 +1703,8 @@ export interface components {
              * @enum {string}
              */
             unit_key: "mm" | "cm" | "inch" | "um" | "ft" | "m";
+            /** Unusual Tolerance */
+            unusual_tolerance?: boolean | null;
         };
         /** MaterialOption */
         MaterialOption: {
@@ -1329,6 +1714,122 @@ export interface components {
             key: string;
             /** Label */
             label: string;
+        };
+        /** OwnerEstimate */
+        OwnerEstimate: {
+            /**
+             * Acceptable
+             * @default false
+             * @constant
+             */
+            acceptable: false;
+            /** Assumptions */
+            assumptions: string[];
+            /**
+             * Binding Authorized
+             * @default false
+             * @constant
+             */
+            binding_authorized: false;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Currency Code
+             * @enum {string}
+             */
+            currency_code: "MMK" | "XTR";
+            /** Current */
+            current: boolean;
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "pass" | "review" | "error";
+            /** Eligibility Rules */
+            eligibility_rules: components["schemas"]["EligibilityRule"][];
+            /** Estimated Total */
+            estimated_total: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Historical Total */
+            historical_total: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @default test_estimate
+             * @constant
+             */
+            kind: "test_estimate";
+            /** Lines */
+            lines: components["schemas"]["PricingLineResponse"][];
+            /**
+             * Mode
+             * @default simulation
+             * @constant
+             */
+            mode: "simulation";
+            /**
+             * Notice
+             * @default NON-BINDING TEST ESTIMATE — hypothetical simulation costs, not a final quotation.
+             */
+            notice: string;
+            /** Number */
+            number: number;
+            /** Policy Checksum */
+            policy_checksum: string;
+            /**
+             * Policy Id
+             * Format: uuid
+             */
+            policy_id: string;
+            /** Policy Snapshot */
+            policy_snapshot: {
+                [key: string]: unknown;
+            };
+            /** Policy Version */
+            policy_version: number;
+            /** Priced */
+            priced: boolean;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Request Revision */
+            request_revision: number;
+            /** Review Reasons */
+            review_reasons: string[];
+            /** Source Sha256 */
+            source_sha256: string;
+            /** Source Snapshot */
+            source_snapshot: {
+                [key: string]: unknown;
+            };
+            /**
+             * Stage Kind
+             * @enum {string}
+             */
+            stage_kind: "printing" | "design";
+            /** Stale Reasons */
+            stale_reasons: string[];
+            /** Subtotal */
+            subtotal: string | null;
+            /** Unknown Costs */
+            unknown_costs: string[];
+        };
+        /** OwnerPricingView */
+        OwnerPricingView: {
+            estimate: components["schemas"]["OwnerEstimate"] | null;
         };
         /** OwnerTask */
         OwnerTask: {
@@ -1393,6 +1894,235 @@ export interface components {
              * Format: uuid
              */
             uploaded_file_id: string;
+        };
+        /** PolicyResponse */
+        PolicyResponse: {
+            /** Active */
+            active: boolean;
+            /** Checksum */
+            checksum: string;
+            configuration: components["schemas"]["PricingPolicyDefinition-Output"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Currency Code
+             * @enum {string}
+             */
+            currency_code: "MMK" | "XTR";
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Mode
+             * @constant
+             */
+            mode: "simulation";
+            /**
+             * Stage Kind
+             * @enum {string}
+             */
+            stage_kind: "printing" | "design";
+            /** Version */
+            version: number;
+        };
+        /** PricingConfiguration */
+        PricingConfiguration: {
+            availability: components["schemas"]["AvailabilityResponse"] | null;
+            /** Policies */
+            policies: components["schemas"]["PolicyResponse"][];
+        };
+        /** PricingLineResponse */
+        PricingLineResponse: {
+            /** Amount */
+            amount: string | null;
+            /** Assumption */
+            assumption: string | null;
+            /** Component Code */
+            component_code: string;
+            /**
+             * Item Kind
+             * @enum {string}
+             */
+            item_kind: "print_item" | "design_service";
+            /** Position */
+            position: number;
+            /** Quantity */
+            quantity: string | null;
+            /** Rate */
+            rate: string | null;
+            /** Request Item Id */
+            request_item_id: string | null;
+        };
+        /** PricingPolicyDefinition */
+        "PricingPolicyDefinition-Input": {
+            /** Average Power Kw */
+            average_power_kw?: string | null;
+            /** Complexity Multipliers */
+            complexity_multipliers?: {
+                [key: string]: string | null;
+            };
+            /**
+             * Currency Code
+             * @enum {string}
+             */
+            currency_code: "MMK" | "XTR";
+            /** Deliverable Fee */
+            deliverable_fee?: string | null;
+            /** Design Per Hour */
+            design_per_hour?: string | null;
+            /** Electricity Per Kwh */
+            electricity_per_kwh?: string | null;
+            eligibility?: components["schemas"]["EligibilityPolicy-Input"];
+            /** Estimate Ttl Seconds */
+            estimate_ttl_seconds: number;
+            /** Gross Margin */
+            gross_margin: string | null;
+            /** Labor Per Hour */
+            labor_per_hour?: string | null;
+            /** Machine Per Hour */
+            machine_per_hour?: string | null;
+            /** Material Per G */
+            material_per_g?: {
+                [key: string]: string | null;
+            };
+            /** Minimum Total */
+            minimum_total: string | null;
+            /** Overhead Per Hour */
+            overhead_per_hour?: string | null;
+            /** Postprocess Hours Per Item */
+            postprocess_hours_per_item?: string | null;
+            /** Risk Fraction */
+            risk_fraction: string | null;
+            /**
+             * Rounding Mode
+             * @enum {string}
+             */
+            rounding_mode: "HALF_UP" | "CEILING";
+            /** Rounding Step */
+            rounding_step: string;
+            /**
+             * Schema Version
+             * @default 1
+             * @constant
+             */
+            schema_version: 1;
+            /** Setup Hours */
+            setup_hours?: string | null;
+            /** Shipping Flat */
+            shipping_flat?: string | null;
+            /**
+             * Simulation Only
+             * @default true
+             * @constant
+             */
+            simulation_only: true;
+            /**
+             * Stage Kind
+             * @enum {string}
+             */
+            stage_kind: "printing" | "design";
+            /** Support Overhead Fraction */
+            support_overhead_fraction?: string | null;
+            /** Tax Fraction */
+            tax_fraction: string | null;
+            /** Usage Rights Fees */
+            usage_rights_fees?: {
+                [key: string]: string | null;
+            };
+            /** Waste Fraction */
+            waste_fraction?: string | null;
+            /** Zero Cost Reasons */
+            zero_cost_reasons?: {
+                [key: string]: string;
+            };
+        };
+        /** PricingPolicyDefinition */
+        "PricingPolicyDefinition-Output": {
+            /** Average Power Kw */
+            average_power_kw?: string | null;
+            /** Complexity Multipliers */
+            complexity_multipliers?: {
+                [key: string]: string | null;
+            };
+            /**
+             * Currency Code
+             * @enum {string}
+             */
+            currency_code: "MMK" | "XTR";
+            /** Deliverable Fee */
+            deliverable_fee?: string | null;
+            /** Design Per Hour */
+            design_per_hour?: string | null;
+            /** Electricity Per Kwh */
+            electricity_per_kwh?: string | null;
+            eligibility?: components["schemas"]["EligibilityPolicy-Output"];
+            /** Estimate Ttl Seconds */
+            estimate_ttl_seconds: number;
+            /** Gross Margin */
+            gross_margin: string | null;
+            /** Labor Per Hour */
+            labor_per_hour?: string | null;
+            /** Machine Per Hour */
+            machine_per_hour?: string | null;
+            /** Material Per G */
+            material_per_g?: {
+                [key: string]: string | null;
+            };
+            /** Minimum Total */
+            minimum_total: string | null;
+            /** Overhead Per Hour */
+            overhead_per_hour?: string | null;
+            /** Postprocess Hours Per Item */
+            postprocess_hours_per_item?: string | null;
+            /** Risk Fraction */
+            risk_fraction: string | null;
+            /**
+             * Rounding Mode
+             * @enum {string}
+             */
+            rounding_mode: "HALF_UP" | "CEILING";
+            /** Rounding Step */
+            rounding_step: string;
+            /**
+             * Schema Version
+             * @default 1
+             * @constant
+             */
+            schema_version: 1;
+            /** Setup Hours */
+            setup_hours?: string | null;
+            /** Shipping Flat */
+            shipping_flat?: string | null;
+            /**
+             * Simulation Only
+             * @default true
+             * @constant
+             */
+            simulation_only: true;
+            /**
+             * Stage Kind
+             * @enum {string}
+             */
+            stage_kind: "printing" | "design";
+            /** Support Overhead Fraction */
+            support_overhead_fraction?: string | null;
+            /** Tax Fraction */
+            tax_fraction: string | null;
+            /** Usage Rights Fees */
+            usage_rights_fees?: {
+                [key: string]: string | null;
+            };
+            /** Waste Fraction */
+            waste_fraction?: string | null;
+            /** Zero Cost Reasons */
+            zero_cost_reasons?: {
+                [key: string]: string;
+            };
         };
         /** PrintingOptions */
         PrintingOptions: {
@@ -1465,6 +2195,22 @@ export interface components {
              * @constant
              */
             mode: "simulation";
+        };
+        /** PublishAvailability */
+        PublishAvailability: {
+            configuration: components["schemas"]["AvailabilityDefinition-Input"];
+            /** Expected Version */
+            expected_version: number;
+            /** Reason */
+            reason: string;
+        };
+        /** PublishPolicy */
+        PublishPolicy: {
+            configuration: components["schemas"]["PricingPolicyDefinition-Input"];
+            /** Expected Version */
+            expected_version: number;
+            /** Reason */
+            reason: string;
         };
         /** PublishProof */
         PublishProof: {
@@ -1725,6 +2471,36 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** StockFixture */
+        "StockFixture-Input": {
+            /** Available G */
+            available_g: string | null;
+            /**
+             * Color Key
+             * @enum {string}
+             */
+            color_key: "dev-white" | "dev-black";
+            /**
+             * Material Key
+             * @enum {string}
+             */
+            material_key: "dev-pla" | "dev-petg";
+        };
+        /** StockFixture */
+        "StockFixture-Output": {
+            /** Available G */
+            available_g: string | null;
+            /**
+             * Color Key
+             * @enum {string}
+             */
+            color_key: "dev-white" | "dev-black";
+            /**
+             * Material Key
+             * @enum {string}
+             */
+            material_key: "dev-pla" | "dev-petg";
         };
         /** TaskPage */
         TaskPage: {
@@ -4230,6 +5006,424 @@ export interface operations {
             };
         };
     };
+    create_fixture_api_v1_owner_pricing_availability_fixtures_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishAvailability"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    configuration_api_v1_owner_pricing_configuration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingConfiguration"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    template_api_v1_owner_pricing_hypothetical_policy_get: {
+        parameters: {
+            query: {
+                stage_kind: "printing" | "design";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingPolicyDefinition-Output"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_policy_api_v1_owner_pricing_policies_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishPolicy"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     queue_api_v1_owner_processing_tasks_get: {
         parameters: {
             query?: {
@@ -4464,6 +5658,322 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RequestPage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    owner_view_api_v1_owner_requests__request_id__estimates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnerPricingView"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    owner_evaluate_api_v1_owner_requests__request_id__estimates_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvaluatePrice"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstimatePointer"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    history_api_v1_owner_requests__request_id__estimates__estimate_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+                estimate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnerEstimate"];
                 };
             };
             /** @description Unauthorized */
@@ -5728,6 +7238,218 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DesignDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    customer_view_api_v1_requests__request_id__estimates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerPricingView"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unsupported Media Type */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    customer_evaluate_api_v1_requests__request_id__estimates_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvaluatePrice"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EstimatePointer"];
                 };
             };
             /** @description Unauthorized */

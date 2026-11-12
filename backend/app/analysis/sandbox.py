@@ -152,7 +152,15 @@ class DockerSandbox:
                 raise SandboxFailure("unsafe_profile")
             args = container_arguments(job.image, input_dir)
             await command(
-                "create", "--name", name, "--label", f"3dps.lease={job.lease_token}", *args
+                "create",
+                "--name",
+                name,
+                "--label",
+                f"3dps.lease={job.lease_token}",
+                *args,
+                # Restored vfs layers can take longer to materialize. No model runs here;
+                # the execution wall and per-process limits below remain unchanged.
+                timeout=60,
             )
             created = True
             async with asyncio.timeout(self.wall_seconds):

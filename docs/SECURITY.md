@@ -130,3 +130,7 @@ limits but **does not establish aggregate cgroup CPU/RAM/PID enforcement** on it
 rootless daemon. Target-host verification and a dedicated VM/microVM assessment
 remain public-worker release prerequisites. See [WORKER_OPERATIONS.md](WORKER_OPERATIONS.md).
 M02 sessions/CSRF/Owner provisioning and all disabled live gates are preserved.
+
+## M07 implementation boundary
+
+M07 estimate evaluation requires current session/resource authorization, CSRF/Origin and idempotency. Owner configuration and private cost projections are server-authorized. Immutable SQL simulation/test_estimate constraints prevent promotion; no acceptance/payment action exists. Customer DTOs omit internal rates/margins. See [PRICING_POLICIES.md](PRICING_POLICIES.md).

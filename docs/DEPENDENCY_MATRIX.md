@@ -38,3 +38,7 @@ Milestones are **development order**, not permission to charge customers. Each m
 - After M11: test live-path guards in staging but leave all live flags OFF.
 - After M14/M15: perform restore and device tests, then review every OPEN_DECISIONS launch blocker.
 - At M16: release manual low-risk printing first after full payment, hardware and QC evidence. Enable Level-2 automatic final quoting only as a **separate subsequent owner-approved action**.
+
+## M07 implementation boundary
+
+The implemented M07 slice persists nonbinding test_estimate records only. Simulation-offer issuance/acceptance remains M08; stock/capacity fixtures confer no hold or checkout authority. See [ADR 0007](adr/0007-simulation-pricing-and-eligibility.md).

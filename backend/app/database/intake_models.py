@@ -1,12 +1,13 @@
 """M04 intake relationships and durable upload reservations; no worker execution."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -77,6 +78,10 @@ class RequestItem(Base):
     special_requirements: Mapped[str] = mapped_column(
         String(2000), nullable=False, server_default=""
     )
+    required_by: Mapped[date | None] = mapped_column(Date)
+    safety_critical: Mapped[bool | None] = mapped_column(Boolean)
+    unusual_tolerance: Mapped[bool | None] = mapped_column(Boolean)
+    requirements_confirmed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     dimension_x_mm: Mapped[float | None] = mapped_column(Float)
     dimension_y_mm: Mapped[float | None] = mapped_column(Float)
     dimension_z_mm: Mapped[float | None] = mapped_column(Float)

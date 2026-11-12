@@ -1,4 +1,4 @@
-name: Backend, authentication, intake and isolated analysis
+name: Backend, authentication, intake, analysis and simulation pricing
 
 on:
   workflow_dispatch:
@@ -85,7 +85,7 @@ jobs:
           TEST_BROWSER_DATABASE_URL: postgresql+asyncpg://3dps_test:ci-disposable-test-only@127.0.0.1:5432/3dps_test_browser
 
       - name: Build application container
-        run: docker build -f backend/Dockerfile -t 3dps-api:m06-ci .
+        run: docker build -f backend/Dockerfile -t 3dps-api:m07-ci .
       - name: Prepare isolated container-test database
         working-directory: backend
         run: |
@@ -101,11 +101,11 @@ jobs:
           PY
       - name: Migrate and start production-mode application container
         run: |
-          cat > "$RUNNER_TEMP/m05-container.env" <<'ENV'
+          cat > "$RUNNER_TEMP/m07-container.env" <<'ENV'
           APP_ENV=production
           DATABASE_URL=postgresql+asyncpg://3dps_test:ci-disposable-test-only@host.docker.internal:5432/3dps_test_browser_container
           BOT_TOKEN=m02-integration-synthetic-bot-token
-          SESSION_SECRET=m05-container-synthetic-secret-never-use-outside-tests-12345
+          SESSION_SECRET=m07-container-synthetic-secret-never-use-outside-tests-12345
           OWNER_TELEGRAM_IDS=111
           PUBLIC_BASE_URL=https://127.0.0.1:18443
           SIMULATION_MODE=true
@@ -117,10 +117,10 @@ jobs:
           REAL_PRINTING_ENABLED=false
           AUTH_RATE_LIMIT=100
           ENV
-          chmod 600 "$RUNNER_TEMP/m05-container.env"
-          docker run --rm --add-host=host.docker.internal:host-gateway --env-file "$RUNNER_TEMP/m05-container.env" 3dps-api:m06-ci alembic upgrade head
-          docker volume create 3dps-m05-private-ci
-          docker run --detach --volume 3dps-m05-private-ci:/srv/private_uploads --name 3dps-m05-container-ci --add-host=host.docker.internal:host-gateway --publish 127.0.0.1:18002:8000 --env-file "$RUNNER_TEMP/m05-container.env" 3dps-api:m06-ci
+          chmod 600 "$RUNNER_TEMP/m07-container.env"
+          docker run --rm --add-host=host.docker.internal:host-gateway --env-file "$RUNNER_TEMP/m07-container.env" 3dps-api:m07-ci alembic upgrade head
+          docker volume create 3dps-m07-private-ci
+          docker run --detach --volume 3dps-m07-private-ci:/srv/private_uploads --name 3dps-m07-container-ci --add-host=host.docker.internal:host-gateway --publish 127.0.0.1:18002:8000 --env-file "$RUNNER_TEMP/m07-container.env" 3dps-api:m07-ci
       - name: Real-stack checks against the application container
         run: node scripts/test-auth-integration.mjs
         working-directory: miniapp
@@ -128,10 +128,10 @@ jobs:
           TEST_CONTAINER_API: 'true'
           TEST_BROWSER_DATABASE_URL: postgresql+asyncpg://3dps_test:ci-disposable-test-only@127.0.0.1:5432/3dps_test_browser_container
       - name: Verify bounded upload recovery preserves ready model files
-        run: docker exec 3dps-m05-container-ci python scripts/cleanup_uploads.py
+        run: docker exec 3dps-m07-container-ci python scripts/cleanup_uploads.py
       - name: Clean up application test container
         if: always()
         run: |
-          docker rm --force 3dps-m05-container-ci 2>/dev/null || true
-          docker volume rm 3dps-m05-private-ci 2>/dev/null || true
-          rm -f "$RUNNER_TEMP/m05-container.env"
+          docker rm --force 3dps-m07-container-ci 2>/dev/null || true
+          docker volume rm 3dps-m07-private-ci 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/m07-container.env"

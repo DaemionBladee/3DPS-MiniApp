@@ -1,11 +1,16 @@
 # 3DPS-MiniApp
 
-Telegram-first 3D printing and custom design workspace. **M05 adds private
-design briefs, versioned scope/proof review and combined design-to-print lineage**
-to the accepted M02–M04 foundation. Both stages have separate specifications and
-state. Proof work requires an explicit simulation-paid fixture; no real quotation,
-payment, live work, digital delivery, slicing or printer operation is available.
-Stop after M05 for review; no merge/deployment or live feature approval is implied.
+Telegram-first 3D printing and custom design workspace. **M07 adds nonbinding
+simulation pricing and fail-closed Level 2 candidate eligibility** to the accepted
+M02–M06 authentication, intake, design lineage and isolated virtual analysis.
+Design and printing keep independent scopes, states and currencies. No binding
+quotation, acceptance, payment, live design work, digital delivery or physical
+printer operation is available. Stop after M07 for review; no merge, deployment
+or live feature approval is implied.
+
+Read [the pricing policy/runbook](docs/PRICING_POLICIES.md),
+[the M07 implementation report](docs/M07_IMPLEMENTATION_REPORT.md), and
+[Codex Cloud setup/start instructions](docs/CODEX_CLOUD_M07.md).
 
 Read [the design intake runbook](docs/DESIGN_INTAKE.md),
 [the M05 implementation report](docs/M05_IMPLEMENTATION_REPORT.md), and

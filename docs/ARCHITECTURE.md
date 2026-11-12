@@ -130,3 +130,7 @@ lease fencing before atomically saving immutable analysis/run, state, audit and
 outbox records. G-code stays in ephemeral scratch. See
 [ADR 0006](adr/0006-isolated-simulation-analysis.md),
 [operations](WORKER_OPERATIONS.md) and [profiles](SLICER_PROFILES.md).
+
+## M07 implementation boundary
+
+M07 adds simulation pricing and fail-closed candidate eligibility inside the existing backend. Immutable policy/availability/estimate/line records and private Owner projections are described in [PRICING_POLICIES.md](PRICING_POLICIES.md) and [ADR 0007](adr/0007-simulation-pricing-and-eligibility.md). No quote acceptance or payment service is introduced.

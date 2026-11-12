@@ -20,6 +20,7 @@ from app.api.auth import router
 from app.api.business import router as business_router
 from app.api.design import router as design_router
 from app.api.intake import router as intake_router
+from app.api.pricing import router as pricing_router
 from app.api.schemas import ErrorResponse
 from app.core.config import Settings
 from app.core.errors import AuthError
@@ -51,7 +52,7 @@ class AuthBodyLimitMiddleware:
         if scope["type"] != "http" or not (
             scope.get("path") == "/api/v1/auth/telegram"
             or (
-                scope.get("path", "").startswith(("/api/v1/requests", "/api/v1/design-projects", "/api/v1/owner/design-projects", "/api/v1/owner/processing-tasks"))
+                scope.get("path", "").startswith(("/api/v1/requests", "/api/v1/design-projects", "/api/v1/owner/design-projects", "/api/v1/owner/processing-tasks", "/api/v1/owner/pricing", "/api/v1/owner/requests"))
                 and scope.get("method") in {"POST", "PATCH", "DELETE"}
             )
         ):
@@ -119,7 +120,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="3DPS Mini App API",
-        version="0.6.0",
+        version="0.7.0",
         lifespan=lifespan,
         docs_url=None if settings.app_env == "production" else "/docs",
         redoc_url=None,
@@ -209,4 +210,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(intake_router)
     app.include_router(design_router)
     app.include_router(analysis_router)
+    app.include_router(pricing_router)
     return app
