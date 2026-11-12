@@ -16,7 +16,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.api.analysis import router as analysis_router
-from app.api.auth import router
+from app.api.auth import require_csrf_session, require_session, router
 from app.api.business import router as business_router
 from app.api.design import router as design_router
 from app.api.intake import router as intake_router
@@ -24,6 +24,7 @@ from app.api.pricing import router as pricing_router
 from app.api.schemas import ErrorResponse
 from app.core.config import Settings
 from app.core.errors import AuthError
+from app.core.request_security import check_browser_headers
 from app.database.session import build_database
 from app.intake.storage import LocalPrivateStorage
 from app.services.auth import consume_auth_rate_limit
@@ -176,15 +177,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 await consume_auth_rate_limit(
                     factory, settings, peer, login=request.url.path == "/api/v1/auth/telegram"
                 )
-            if request.method not in {"GET", "HEAD", "OPTIONS"}:
-                if request.headers.get("origin") != settings.origin:
-                    raise AuthError(403, "origin_invalid", "Open this action from the Mini App.")
+            unsafe = request.method not in {"GET", "HEAD", "OPTIONS"}
+            opaque_origin = check_browser_headers(request.headers, settings.origin, unsafe=unsafe)
+            if unsafe:
                 if (
                     request.url.path == "/api/v1/auth/telegram"
-                    and request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
-                    != "application/json"
+                    and (
+                        len(request.headers.getlist("content-type")) != 1
+                        or request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+                        != "application/json"
+                    )
                 ):
                     raise AuthError(415, "json_required", "Authentication requires a JSON request.")
+                if opaque_origin and not (
+                    request.method == "POST" and request.url.path == "/api/v1/auth/telegram"
+                ):
+                    # An opaque origin is never a session/CSRF exemption, even
+                    # for a route that accidentally omits its write dependency.
+                    principal = await require_session(request, settings, factory)
+                    await require_csrf_session(request, principal, settings)
+                # JSON login still reaches the unchanged HMAC/freshness/replay
+                # verification before any user/session mutation can occur.
             response = await call_next(request)
         except AuthError as error:
             logger.info("auth.request_rejected code=%s status=%s", error.code, error.status)

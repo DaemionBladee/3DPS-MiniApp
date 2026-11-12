@@ -134,3 +134,16 @@ M02 sessions/CSRF/Owner provisioning and all disabled live gates are preserved.
 ## M07 implementation boundary
 
 M07 estimate evaluation requires current session/resource authorization, CSRF/Origin and idempotency. Owner configuration and private cost projections are server-authorized. Immutable SQL simulation/test_estimate constraints prevent promotion; no acceptance/payment action exists. Customer DTOs omit internal rates/margins. See [PRICING_POLICIES.md](PRICING_POLICIES.md).
+
+## Telegram iOS opaque-Origin compatibility
+
+Origin `null` is not identity or same-origin evidence. The login-only pre-session
+path requires JSON plus fresh HMAC-verified, single-use Telegram initData and the
+existing shared rate limiter. Other opaque-origin mutations require the real
+session and session-bound CSRF before route execution. Present Fetch Metadata and
+Referer must corroborate same-origin use; hostile/ambiguous evidence overrides
+valid credentials and is rejected. When embedded clients omit those headers,
+cryptographic proof/CSRF plus browser same-origin/preflight protections remain the
+independent controls. Missing Origin on writes is still rejected, and no CORS
+permission is granted to null or foreign origins. Cookie, role, replay and live
+feature gates are unchanged. See [the complete policy](IOS_AUTH_ORIGIN_FIX.md).

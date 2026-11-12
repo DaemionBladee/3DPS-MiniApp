@@ -1,7 +1,8 @@
 # M02 authentication — development and verification
 
-This is the M02 auth-only workflow. Projects, orders, files, quotations, payments,
-inventory and production are not implemented. Keep all live gates off. Read
+This runbook covers the M02 authentication foundation and the Telegram iOS
+opaque-Origin compatibility fix. See the milestone reports for later business
+features; all live gates remain off. Read
 [SECURITY.md](SECURITY.md) and [ADR 0002](adr/0002-telegram-authentication.md).
 
 ## API and trust boundaries
@@ -17,10 +18,10 @@ signature checker independently agrees with the synthetic test vectors.
 
 | Endpoint | Behavior |
 |---|---|
-| `POST /api/v1/auth/telegram` | Signed raw launch -> user/session; JSON and exact configured Origin required. Extra client role fields rejected. |
+| `POST /api/v1/auth/telegram` | Signed raw launch -> user/session; JSON and configured-origin/opaque-WebView policy required. Extra client role fields rejected. |
 | `GET /api/v1/auth/me` | Current user, role/capabilities and session-bound CSRF token; 401 without a valid cookie. |
 | `GET /api/v1/auth/csrf` | Current session's CSRF token; no public token issuance. |
-| `POST /api/v1/auth/logout` | Exact Origin + session CSRF; revokes DB session and clears cookie, 204. |
+| `POST /api/v1/auth/logout` | Validated browser headers + session CSRF; revokes DB session and clears cookie, 204. |
 | `GET /api/v1/owner/auth-check` | Harmless Owner-only proof endpoint: 401 anonymous, 403 Customer, 200 configured Owner. |
 | `GET /api/v1/auth/users/{uuid}` | Auth fixture returns only the caller's user; other IDs return 404, including for Owner. |
 | `GET /api/v1/health` | Public liveness only; startup checks PostgreSQL connectivity. |
@@ -32,7 +33,8 @@ Production excludes that adapter even if its frontend flag was accidentally on.
 Sessions use 32 random bytes, with only SHA-256 token hashes persisted. The
 `__Host-3dps_session` cookie is always Secure, HttpOnly, SameSite=Lax, Path=/,
 without Domain. CSRF tokens are HMAC-derived per session and returned only to
-the authenticated same-origin app. They remain in React memory. Sessions have a
+the authenticated app under same-origin/CORS protections, including the guarded
+opaque-WebView path. They remain in React memory. Sessions have a
 fixed one-hour default expiry; logout and administrative DB revocation apply
 server-side. No long-lived browser storage or role headers are used.
 
@@ -269,3 +271,17 @@ Do not prune solely on session expiry: the configured session lifetime may be
 shorter than the permitted proof-freshness window. Deleting that session's
 unique proof record too early would allow a logged-out/expired launch to replay.
 Retention policy and any separate proof tombstones need explicit review first.
+
+## Telegram iOS Origin compatibility
+
+A WebView may serialize its Origin as `null`; this never identifies Telegram.
+Non-null Origins still require exact PUBLIC_BASE_URL and hostile Fetch Metadata or
+foreign Referer is rejected. Null-origin JSON login still verifies a fresh,
+single-use HMAC launch proof and rate limits. Every other null-origin mutation
+requires a real cookie and its session-bound CSRF token at middleware and route
+boundaries. Missing Origin on writes remains rejected. No null/wildcard CORS,
+insecure cookie or frontend identity override is enabled.
+
+See [IOS_AUTH_ORIGIN_FIX.md](IOS_AUTH_ORIGIN_FIX.md) for the threat model, browser
+header matrix, fallback when embedded clients omit metadata, CachyOS rebuild
+commands and the required real Telegram iOS retest. This fix needs no migration.

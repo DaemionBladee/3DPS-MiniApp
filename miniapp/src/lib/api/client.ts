@@ -61,7 +61,8 @@ export async function apiRequest<T = unknown>(path: ApiPath, options: RequestOpt
   if (csrfToken) headers.set('X-CSRF-Token', csrfToken)
   if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey)
   const isTelegramHandshake = path === '/auth/telegram' && method === 'POST'
-  // Anonymous login has no session CSRF token yet; FastAPI requires exact Origin.
+  // Anonymous login has no session CSRF token yet; FastAPI requires verified
+  // Telegram launch data and its browser-origin policy (including opaque WebViews).
   // No other mutating endpoint can use this narrow exception.
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !csrfToken && !isTelegramHandshake) {
     throw new ApiError('A session CSRF token is required for changes', 0, 'csrf_required')

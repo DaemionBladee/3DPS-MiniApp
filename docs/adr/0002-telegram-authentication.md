@@ -45,3 +45,15 @@ logout. Rate buckets intentionally trust the transport peer only; proxy
 aggregation and real-client cookie behavior need external evidence. Retention
 and broader deployment hardening remain explicit later work. See the tested
 [auth runbook](../AUTHENTICATION.md) and [M02 report](../M02_IMPLEMENTATION_REPORT.md).
+
+## 2026-11-12 compatibility addendum
+
+The exact-Origin rule above now has a narrow, credential-protected path for an
+explicit opaque `Origin: null` from embedded clients. JSON login still requires
+fresh, single-use Telegram HMAC evidence; every other opaque-origin mutation must
+pass session-bound CSRF in middleware as well as existing route authorization.
+Untrusted non-null origins, hostile Fetch Metadata, foreign Referer, absent write
+Origin and permissive/null CORS remain forbidden. This does not alter HMAC,
+replay/session SQL, cookie attributes, Owner provisioning or migration history.
+Rationale, fallback assumptions and device-test limitations:
+[IOS_AUTH_ORIGIN_FIX.md](../IOS_AUTH_ORIGIN_FIX.md).

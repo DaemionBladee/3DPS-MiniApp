@@ -1,5 +1,6 @@
 /* global window, document */
 import assert from 'node:assert/strict'
+import { runOpaqueOriginIntegration } from './ios-auth-integration.mjs'
 import { runPricingIntegration } from './pricing-integration.mjs'
 import { runAnalysisIntegration } from './analysis-integration.mjs'
 import { runDesignIntegration } from './design-integration.mjs'
@@ -26,6 +27,8 @@ const cookieName = '__Host-3dps_session'
 // Test harness only: a caller-owned image may replace the local Python child.
 // The API address remains fixed to loopback; never select a remote/live API.
 const useContainerApi = process.env.TEST_CONTAINER_API === 'true'
+// Only boolean/count evidence is retained; never record header values or bodies.
+const opaqueRequests = { login: 0, csrfMutations: 0 }
 
 function safeDatabaseUrl() {
   const value = process.env.TEST_BROWSER_DATABASE_URL
@@ -105,6 +108,10 @@ async function createGateway(directory) {
   assert(!generated.error && generated.status === 0, 'OpenSSL must generate the ephemeral loopback TLS certificate.')
   const server = https.createServer({ key: await readFile(keyFile), cert: await readFile(certificateFile) }, (request, response) => {
     if (request.url?.startsWith('/api/')) {
+      if (request.headers.origin === 'null') {
+        if (request.method === 'POST' && request.url === '/api/v1/auth/telegram') opaqueRequests.login += 1
+        else if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) && request.headers['x-csrf-token']) opaqueRequests.csrfMutations += 1
+      }
       const upstream = http.request({
         hostname: '127.0.0.1', port: apiPort, method: request.method,
         path: request.url, headers: { ...request.headers, host: `127.0.0.1:${gatewayPort}` },
@@ -207,12 +214,16 @@ try {
   await installTelegramPresentation(customer, customerProof)
   // The HTTPS gateway must preserve Origin enforcement, including for an
   // otherwise valid unused proof. A rejected browser origin consumes no proof.
-  for (const invalidOrigin of ['https://untrusted.example', 'null']) {
+  for (const invalidOrigin of ['https://untrusted.example']) {
     const rejected = await customer.request.post(`${origin}/api/v1/auth/telegram`, {
       headers: { Origin: invalidOrigin }, data: { init_data: customerProof },
     })
     assert(rejected.status() === 403, 'HTTPS proxy must not permit login from an untrusted Origin.')
   }
+  const crossSiteOpaque = await customer.request.post(`${origin}/api/v1/auth/telegram`, {
+    headers: { Origin: 'null', 'Sec-Fetch-Site': 'cross-site' }, data: { init_data: customerProof },
+  })
+  assert(crossSiteOpaque.status() === 403, 'Opaque Origin must never override hostile Fetch Metadata.')
   const missingOrigin = await customer.request.post(`${origin}/api/v1/auth/telegram`, { data: { init_data: customerProof } })
   assert(missingOrigin.status() === 403, 'HTTPS proxy must not permit login with missing Origin.')
   const page = await customer.newPage()
@@ -428,7 +439,8 @@ try {
   assert((await forgedPage.evaluate(async () => (await fetch('/api/v1/owner/auth-check')).status)) === 200, 'A fresh valid proof must recover from an earlier rejected login.')
   console.log('PASS 7/10: forged launch rejected; fresh valid launch recovers through the real backend.')
   await forged.close()
-  console.log(`M02–M07 real-stack integration: ${process.env.M06_TEST_WORKER_IMAGE && !useContainerApi ? 17 : 16} flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.`)
+  await runOpaqueOriginIntegration({ browser, origin, installTelegramPresentation, signedLaunch, observed: opaqueRequests })
+  console.log(`M02–M07 real-stack integration: ${process.env.M06_TEST_WORKER_IMAGE && !useContainerApi ? 19 : 18} flows PASS; no API mocks, production frontend + HTTPS + FastAPI + PostgreSQL.`)
   if (useContainerApi) console.log('Container API mode PASS: packaged application used; caller owns container cleanup.')
 } catch (error) {
   // Assertion/selector diagnostics contain no signed proofs or credential values.

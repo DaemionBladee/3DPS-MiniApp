@@ -119,7 +119,7 @@ async def test_api_rejects_wrong_signature_and_duplicate_decoded_fields(client: 
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("origin", ["https://attacker.example", "null", "https://testserver.attacker.example"])
+@pytest.mark.parametrize("origin", ["https://attacker.example", "https://testserver.attacker.example"])
 async def test_login_origin_is_checked_before_session_creation(client: AsyncClient, origin: str) -> None:
     response = await client.post(
         "/api/v1/auth/telegram",
